@@ -1,0 +1,14 @@
+.vscode/
+bin/
+CMakeLists.txt
+*.o
+Triangulo
+*.txt
+Debug/
+Faixas.h
+freeglut.dll
+GL/
+*.exe
+obj/
+*.layout
+release/
