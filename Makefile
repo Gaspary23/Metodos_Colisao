@@ -1,7 +1,8 @@
 # Makefile para Linux e macOS
 
 PROG = Triangulo
-FONTES = Ponto.cpp Poligono.cpp Temporizador.cpp ListaDeCoresRGB.cpp PontosNoTriangulo.cpp Linha.cpp InterseccaoEntreTodasAsLinhas.cpp
+#FONTES = Linha.cpp InterseccaoEntreTodasAsLinhas.cpp
+FONTES = Ponto.cpp Poligono.cpp Temporizador.cpp ListaDeCoresRGB.cpp PontosNoTriangulo.cpp
 
 OBJETOS = $(FONTES:.cpp=.o)
 CPPFLAGS = -g -O3 -DGL_SILENCE_DEPRECATION # -Wall -g  # Todas as warnings, infos de debug
