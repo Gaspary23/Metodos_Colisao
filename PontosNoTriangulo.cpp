@@ -54,6 +54,9 @@ Ponto PosicaoDoCampoDeVisao, PontoClicado;
 bool desenhaEixos = true;
 bool FoiClicado = false;
 
+// Variaveis que controlam as propriedades do algoritmo de forca bruta
+bool envelope=0;
+bool quadtree=0;
 
 
 // **********************************************************************
@@ -373,6 +376,45 @@ void Mouse(int button,int state,int x,int y)
     PontoClicado = Ponto(ox,oy,oz);
     FoiClicado = true;
 }
+
+// **********************************************************************
+// void menu()
+// Usado para alterar propriedades do algoritmo de forca bruta
+//
+// **********************************************************************
+void menu(){
+Scanner scan = new Scanner(System.in);
+cout << "Pressione '0' para manter o algotitmo em seu estado atual";
+cout << "Pressione '1' para ativar/desativar o algotitmo de envelope";
+cout << "Pressione '2' para ativar/desativar o algotitmo de quadtree";
+int escolha = scan.nextInt();
+if (escolha = 1){
+envelope= !envelope;
+}
+if (escolha = 2){
+quadtree= !quadtree;
+}
+}
+// **********************************************************************
+// void forcabruta()
+// Executa o algoritmo de forca bruta
+//
+// **********************************************************************
+void forcabruta(){
+if (envelope=1){
+//implementar propriedades de envelope;
+}
+if (quadtree=1){
+//implementar propriedades de quadtree;
+}
+// int i=0;
+// int [2] arrayfalso = {0,0,0}
+// for (p in listpontos){
+//TODO: formula da forca bruta
+//
+//}
+}
+
 
 // **********************************************************************
 //  void main ( int argc, char** argv )
