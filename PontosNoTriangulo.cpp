@@ -1,6 +1,6 @@
 // **********************************************************************
-// PUCRS/Escola Polit�cnica
-// COMPUTA��O GR�FICA
+// PUCRS/Escola PolitŽcnica
+// COMPUTA‚ÌO GRçFICA
 //
 // Programa basico para criar aplicacoes 2D em OpenGL
 //
@@ -33,7 +33,7 @@ using namespace std;
 #endif
 
 #ifdef __linux__
-#include <GL/glut.h>
+#include <glut.h>
 #endif
 
 #include "Ponto.h"
@@ -54,19 +54,35 @@ Ponto PosicaoDoCampoDeVisao, PontoClicado;
 bool desenhaEixos = true;
 bool FoiClicado = false;
 
-// Variaveis que controlam as propriedades do algoritmo de forca bruta
+// Variaveis que controlam as propriedades do algoritmo de forca bruta --add
 bool envelope=0;
 bool quadtree=0;
+
+// **********************************************************************
+// GeraLista(int qtd) --add
+//      Metodo que cria a lista que sera usada para armazenar os pontos
+// **********************************************************************
+void GeraLista(int qtd){
+    Ponto *v;
+    int i;
+    v = (Ponto *)malloc(qtd * sizeof(Ponto));
+    for (i = 0; i < qtd; ++i) {
+         v[i] = (Ponto(0,0,0));
+    }
+    printf("\n");
+    free(v);
+}
 
 
 // **********************************************************************
 // GeraPontos(int qtd)
-//      M�todo que gera pontos aleat�rios no intervalo [Min..Max]
+//      MŽtodo que gera pontos aleat—rios no intervalo [Min..Max]
 // **********************************************************************
 void GeraPontos(unsigned long int qtd, Ponto Min, Ponto Max)
 {
     time_t t;
     Ponto Escala;
+    GeraLista(qtd); // add
     Escala = (Max - Min) * (1.0/1000.0);
     srand((unsigned) time(&t));
     for (int i = 0;i<qtd; i++)
@@ -76,6 +92,7 @@ void GeraPontos(unsigned long int qtd, Ponto Min, Ponto Max)
         x = x * Escala.x + Min.x;
         y = y * Escala.y + Min.y;
         PontosDoCenario.insereVertice(Ponto(x,y));
+
     }
 }
 
@@ -83,35 +100,35 @@ void GeraPontos(unsigned long int qtd, Ponto Min, Ponto Max)
 // void CriaTrianguloDoCampoDeVisao()
 //  Cria um triangulo a partir do vetor (1,0,0), girando este vetor
 //  em 45 e -45 graus.
-//  Este vetor fica armazenado nas vari�veis "TrianguloBase" e
+//  Este vetor fica armazenado nas vari‡veis "TrianguloBase" e
 //  "CampoDeVisao"
 // **********************************************************************
 void CriaTrianguloDoCampoDeVisao()
 {
     Ponto vetor = Ponto(1,0,0);
-    
+
     TrianguloBase.insereVertice(Ponto(0,0,0));
     CampoDeVisao.insereVertice(Ponto(0,0,0));
-    
+
     vetor.rotacionaZ(45);
     TrianguloBase.insereVertice(vetor);
     CampoDeVisao.insereVertice(vetor);
-    
+
     vetor.rotacionaZ(-90);
     TrianguloBase.insereVertice(vetor);
     CampoDeVisao.insereVertice(vetor);
-    
+
 }
 // **********************************************************************
 // void PosicionaTrianguloDoCampoDeVisao()
-//  Posiciona o campo de vis�o na posicao PosicaoDoCampoDeVisao,
+//  Posiciona o campo de vis‹o na posicao PosicaoDoCampoDeVisao,
 //  com a orientacao "AnguloDoCampoDeVisao".
-//  O tamanho do campo de vis�o eh de 25% da largura da janela.
+//  O tamanho do campo de vis‹o eh de 25% da largura da janela.
 // **********************************************************************
 void PosicionaTrianguloDoCampoDeVisao()
 {
     float tamanho = Tamanho.x * 0.25;
-    
+
     Ponto temp;
     for (int i=0;i<TrianguloBase.getNVertices();i++)
     {
@@ -122,7 +139,7 @@ void PosicionaTrianguloDoCampoDeVisao()
 }
 // **********************************************************************
 // void AvancaCampoDeVisao(float distancia)
-//  Move o campo de vis�o "distancia" unidades pra frente ou pra tras.
+//  Move o campo de vis‹o "distancia" unidades pra frente ou pra tras.
 // **********************************************************************
 void AvancaCampoDeVisao(float distancia)
 {
@@ -142,21 +159,21 @@ void init()
     // Gera ou Carrega os pontos do cenario.
     // Note que o "aspect ratio" dos pontos deve ser o mesmo
     // da janela.
-    
+
     // PontosDoCenario.LePoligono("PontosDenteDeSerra.txt");
     GeraPontos(1000, Ponto(0,0), Ponto(500,500));
-    
+
     PontosDoCenario.obtemLimites(Min,Max);
     Min.x--;Min.y--;
     Max.x++;Max.y++;
-    
+
     Meio = (Max+Min) * 0.5; // Ponto central da janela
     Tamanho = (Max-Min);  // Tamanho da janela em X,Y
-    
+
     // Ajusta variaveis do triangulo que representa o campo de visao
     PosicaoDoCampoDeVisao = Meio;
     AnguloDoCampoDeVisao = 0;
-    
+
     // Cria o triangulo que representa o campo de visao
     CriaTrianguloDoCampoDeVisao();
     PosicionaTrianguloDoCampoDeVisao();
@@ -175,7 +192,7 @@ void animate()
     TempoTotal += dt;
     nFrames++;
 
-    if (AccumDeltaT > 1.0/30) // fixa a atualiza��o da tela em 30
+    if (AccumDeltaT > 1.0/30) // fixa a atualiza ‹o da tela em 30
     {
         AccumDeltaT = 0;
         glutPostRedisplay();
@@ -238,16 +255,16 @@ void DesenhaLinha(Ponto P1, Ponto P2)
 void display( void )
 {
 
-	// Limpa a tela coma cor de fundo
-	glClear(GL_COLOR_BUFFER_BIT);
+// Limpa a tela coma cor de fundo
+glClear(GL_COLOR_BUFFER_BIT);
 
-    // Define os limites l�gicos da �rea OpenGL dentro da Janela
-	glMatrixMode(GL_MODELVIEW);
+    // Define os limites lógicos da área OpenGL dentro da Janela
+glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-	// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-	// Coloque aqui as chamadas das rotinas que desenham os objetos
-	// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+// Coloque aqui as chamadas das rotinas que desenham os objetos
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     if (desenhaEixos)
     {
@@ -259,23 +276,23 @@ void display( void )
     //glPointSize(5);
     glColor3f(1,1,0); // R, G, B  [0..1]
     PontosDoCenario.desenhaVertices();
-    
+
     glLineWidth(3);
     glColor3f(1,0,0); // R, G, B  [0..1]
     CampoDeVisao.desenhaPoligono();
-    
+
     if (FoiClicado)
     {
         PontoClicado.imprime("- Ponto no universo: ", "\n");
         FoiClicado = false;
     }
-    
-	glutSwapBuffers();
+
+glutSwapBuffers();
 }
 // **********************************************************************
 // ContaTempo(double tempo)
-//      conta um certo n�mero de segundos e informa quanto frames
-// se passaram neste per�odo.
+//      conta um certo nœmero de segundos e informa quanto frames
+// se passaram neste per’odo.
 // **********************************************************************
 void ContaTempo(double tempo)
 {
@@ -303,20 +320,20 @@ void ContaTempo(double tempo)
 void keyboard ( unsigned char key, int x, int y )
 {
 
-	switch ( key )
-	{
-		case 27:        // Termina o programa qdo
-			exit ( 0 );   // a tecla ESC for pressionada
-			break;
+switch ( key )
+{
+case 27:        // Termina o programa qdo
+exit ( 0 );   // a tecla ESC for pressionada
+break;
         case 't':
             ContaTempo(3);
             break;
         case ' ':
             desenhaEixos = !desenhaEixos;
         break;
-		default:
-			break;
-	}
+default:
+break;
+}
     //PosicionaTrianguloDoCampoDeVisao();
     glutPostRedisplay();
 }
@@ -325,33 +342,33 @@ void keyboard ( unsigned char key, int x, int y )
 // **********************************************************************
 void arrow_keys ( int a_keys, int x, int y )
 {
-	switch ( a_keys )
-	{
+switch ( a_keys )
+{
         case GLUT_KEY_LEFT:       // Se pressionar LEFT
             AnguloDoCampoDeVisao+=2;
             break;
         case GLUT_KEY_RIGHT:       // Se pressionar RIGHT
             AnguloDoCampoDeVisao-=2;
             break;
-		case GLUT_KEY_UP:
+case GLUT_KEY_UP:
             AvancaCampoDeVisao(2);
             break;
-	    case GLUT_KEY_DOWN:
+   case GLUT_KEY_DOWN:
             AvancaCampoDeVisao(-2);
-			break;
-		default:
-			break;
-	}
+break;
+default:
+break;
+}
     PosicionaTrianguloDoCampoDeVisao();
     cout << "Triangulo Base: " << endl;
     TrianguloBase.imprimeVertices();
     glutPostRedisplay();
 }
 // **********************************************************************
-// Esta fun��o captura o clique do botao direito do mouse sobre a �rea de
-// desenho e converte a coordenada para o sistema de refer�ncia definido
-// na glOrtho (ver fun��o reshape)
-// Este c�digo � baseado em http://hamala.se/forums/viewtopic.php?t=20
+// Esta fun ‹o captura o clique do botao direito do mouse sobre a ‡rea de
+// desenho e converte a coordenada para o sistema de refer ncia definido
+// na glOrtho (ver fun ‹o reshape)
+// Este c—digo Ž baseado em http://hamala.se/forums/viewtopic.php?t=20
 // **********************************************************************
 void Mouse(int button,int state,int x,int y)
 {
@@ -376,45 +393,51 @@ void Mouse(int button,int state,int x,int y)
     PontoClicado = Ponto(ox,oy,oz);
     FoiClicado = true;
 }
-
 // **********************************************************************
-// void menu()
-// Usado para alterar propriedades do algoritmo de forca bruta
+//  void menu() --add
+//  Usado para alterar propriedades do algoritmo de forca bruta
 //
 // **********************************************************************
 void menu(){
-Scanner scan = new Scanner(System.in);
+int escolha=0;
 cout << "Pressione '0' para manter o algotitmo em seu estado atual";
 cout << "Pressione '1' para ativar/desativar o algotitmo de envelope";
 cout << "Pressione '2' para ativar/desativar o algotitmo de quadtree";
-int escolha = scan.nextInt();
+
+scanf("%d", &escolha);
 if (escolha = 1){
-envelope= !envelope;
+    envelope = (!envelope);
 }
 if (escolha = 2){
-quadtree= !quadtree;
+    quadtree = (!quadtree);
 }
 }
 // **********************************************************************
-// void forcabruta()
-// Executa o algoritmo de forca bruta
+//  void forcabruta() --add
+//  Executa o algoritmo de forca bruta
 //
 // **********************************************************************
-void forcabruta(){
+void forcabruta(int qtd){
 if (envelope=1){
-//implementar propriedades de envelope;
+    //implementar propriedades de envelope;
 }
 if (quadtree=1){
-//implementar propriedades de quadtree;
+    //implementar propriedades de quadtree;
 }
-// int i=0;
-// int [2] arrayfalso = {0,0,0}
-// for (p in listpontos){
-//TODO: formula da forca bruta
-//
-//}
+   // int p=0;
+   // int [2] arraytemp = {0,0,0}
+   // for (int p=0;p<qtd;p++){
+   // for (int i =0; i <= 2; i++){
+   // arraytemp[i]= (listPontos[p]) - CampoDeVisao.getVertice(i);
+   // }
+   // if (arraytemp[0]<0 && arraytemp[1]<0 && arraytemp[2]<0){
+   // TODO: colocar na lista de pontos dentro do triangulo
+   //}
+   // else{
+   // TODO: colocar na lista de pontos fora do triangulo
+   //}
+   //}
 }
-
 
 // **********************************************************************
 //  void main ( int argc, char** argv )
@@ -435,38 +458,38 @@ int  main ( int argc, char** argv )
     // que aparecera na barra de titulo da janela.
     glutCreateWindow    ( "Poligonos em OpenGL" );
 
-    // executa algumas inicializa��es
+    // executa algumas inicializações
     init ();
 
     // Define que o tratador de evento para
     // o redesenho da tela. A funcao "display"
-    // ser� chamada automaticamente quando
-    // for necess�rio redesenhar a janela
+    // será chamada automaticamente quando
+    // for necessário redesenhar a janela
     glutDisplayFunc ( display );
 
     // Define que o tratador de evento para
-    // o invalida��o da tela. A funcao "display"
-    // ser� chamada automaticamente sempre que a
-    // m�quina estiver ociosa (idle)
+    // o invalida ‹o da tela. A funcao "display"
+    // será chamada automaticamente sempre que a
+    // m‡quina estiver ociosa (idle)
     glutIdleFunc(animate);
 
     // Define que o tratador de evento para
     // o redimensionamento da janela. A funcao "reshape"
-    // ser� chamada automaticamente quando
-    // o usu�rio alterar o tamanho da janela
+    // será chamada automaticamente quando
+    // o usuário alterar o tamanho da janela
     glutReshapeFunc ( reshape );
 
     // Define que o tratador de evento para
     // as teclas. A funcao "keyboard"
-    // ser� chamada automaticamente sempre
-    // o usu�rio pressionar uma tecla comum
+    // será chamada automaticamente sempre
+    // o usuário pressionar uma tecla comum
     glutKeyboardFunc ( keyboard );
 
     // Define que o tratador de evento para
     // as teclas especiais(F1, F2,... ALT-A,
     // ALT-B, Teclas de Seta, ...).
-    // A funcao "arrow_keys" ser� chamada
-    // automaticamente sempre o usu�rio
+    // A funcao "arrow_keys" será chamada
+    // automaticamente sempre o usuário
     // pressionar uma tecla especial
     glutSpecialFunc ( arrow_keys );
 
