@@ -1,7 +1,6 @@
 # Makefile para Linux e macOS
 
 PROG = Triangulo
-#FONTES = Linha.cpp InterseccaoEntreTodasAsLinhas.cpp
 FONTES = Ponto.cpp Poligono.cpp Temporizador.cpp ListaDeCoresRGB.cpp PontosNoTriangulo.cpp
 
 OBJETOS = $(FONTES:.cpp=.o)
