@@ -38,7 +38,7 @@ Temporizador T;
 double AccumDeltaT = 0;
 
 // Variaveis que controlam o triangulo do campo de visao
-Poligono PontosDoCenario, CampoDeVisao, TrianguloBase, Envelope;
+Poligono PontosDoCenario, CampoDeVisao, TrianguloBase, Envelope, PontosInternos;
 float AnguloDoCampoDeVisao = 0.0;
 
 // Limites logicos da area de desenho
@@ -46,22 +46,21 @@ Ponto Min, Max, Tamanho, Meio;
 Ponto PosicaoDoCampoDeVisao, PontoClicado;
 
 bool desenhaEixos = true;
-bool desenhaEnvelope = false;
 bool FoiClicado = false;
 
 // Variaveis que controlam as propriedades do algoritmo de forca bruta --add
-bool envelope = 0;
-bool quadtree = 0;
+bool forcaBruta = false;
+bool envelope   = false;
+bool quadtree   = false;
 
 // **********************************************************************
-// GeraPontos(int qtd)
+// GeraPontos(int qtd, Ponto Min, Ponto Max)
 //      MŽtodo que gera pontos aleat—rios no intervalo [Min..Max]
 // **********************************************************************
 void GeraPontos(unsigned long int qtd, Ponto Min, Ponto Max)
 {
     time_t t;
     Ponto Escala;
-    //GeraLista(qtd); // add
     Escala = (Max - Min) * (1.0 / 1000.0);
     srand((unsigned)time(&t));
     for (int i = 0; i < qtd; i++)
@@ -273,6 +272,43 @@ void DesenhaLinha(Ponto P1, Ponto P2)
     glEnd();
 }
 // **********************************************************************
+//  void forcabruta() --add
+//  Executa o algoritmo de forca bruta
+//
+// **********************************************************************
+void forcabruta()
+{   
+    int sinais[3];
+    for (int i = 0; i < PontosDoCenario.getNVertices(); i++){
+        Ponto auxiliar = {0,0,0};
+        for (int j = 0 ; j < 3; j++){
+            Ponto vetorTriangulo = CampoDeVisao.getVertice(j) - CampoDeVisao.getVertice((j+1)%3);
+            Ponto vetorPonto = PontosDoCenario.getVertice(i) - CampoDeVisao.getVertice(j);
+
+            ProdVetorial(vetorTriangulo, vetorPonto, auxiliar);
+            sinais[j] = auxiliar.z;
+        }
+        if (sinais[0] > 0 && sinais[1] > 0 && sinais[2] > 0 || sinais[0] < 0 && sinais[1] < 0 && sinais[2] < 0) {
+            cout << "\nPonto " << i << " esta dentro do campo de visao" << endl;
+        }
+    }
+}
+// **********************************************************************
+// void calculaEnvelope()
+// verifica se os pontos estão dentro do envelope
+//
+// **********************************************************************
+void calculaEnvelope() {
+    for (int i = 0; i < PontosDoCenario.getNVertices(); i++){
+        Ponto ponto = PontosDoCenario.getVertice(i);
+
+        if(ponto.x >= Envelope.getVertice(0).x && ponto.x <= Envelope.getVertice(2).x && 
+           ponto.y >= Envelope.getVertice(1).y && ponto.y <= Envelope.getVertice(3).y) {
+            cout << "\nPonto " << i << " esta dentro do envelope" << endl;
+        }
+    }
+}
+// **********************************************************************
 //  void display( void )
 //
 // **********************************************************************
@@ -289,17 +325,23 @@ void display(void)
     // Coloque aqui as chamadas das rotinas que desenham os objetos
     // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    if (desenhaEixos)
-    {
+    if (desenhaEixos) {
         glLineWidth(1);
         glColor3f(1, 1, 1); // R, G, B  [0..1]
         DesenhaEixos();
     }
 
-    if (desenhaEnvelope) {
+    if(forcaBruta) {
+        forcabruta();
+        //chamar pintura
+    }
+
+    if (envelope) {
         glLineWidth(3);
         glColor3f(1, 0, 0);
         Envelope.desenhaPoligono();
+        calculaEnvelope();
+        //chamar pintura
     }
 
     // glPointSize(5);
@@ -341,36 +383,6 @@ void ContaTempo(double tempo)
     }
 }
 // **********************************************************************
-//  void forcabruta() --add
-//  Executa o algoritmo de forca bruta
-//
-// **********************************************************************
-void forcabruta()
-{   
-    int sinais[3];
-    for (int i = 0; i < PontosDoCenario.getNVertices(); i++){
-        Ponto auxiliar = {0,0,0};
-        for (int j = 0 ; j < 3; j++){
-            Ponto vetorTriangulo = CampoDeVisao.getVertice(j) - CampoDeVisao.getVertice((j+1)%3);
-            Ponto vetorPonto = PontosDoCenario.getVertice(i) - CampoDeVisao.getVertice(j);
-
-            ProdVetorial(vetorTriangulo, vetorPonto, auxiliar);
-            sinais[j] = auxiliar.z;
-        }
-        if (sinais[0] > 0 && sinais[1] > 0 && sinais[2] > 0 || sinais[0] < 0 && sinais[1] < 0 && sinais[2] < 0) {
-            cout << "\nPonto " << i << " esta dentro do campo de visao" << endl;
-        }
-    }
-}
-// **********************************************************************
-// void calculaEnvelope()
-// verifica se os pontos estão dentro do envelope
-//
-// **********************************************************************
-void calculaEnvelope() {
-    
-}
-// **********************************************************************
 //  void keyboard ( unsigned char key, int x, int y )
 //
 // **********************************************************************
@@ -382,14 +394,16 @@ void keyboard(unsigned char key, int x, int y)
     case 27:     // Termina o programa qdo
         exit(0); // a tecla ESC for pressionada
         break;
-    case 't':
-        ContaTempo(3);
-        break;
     case 'e':
-        desenhaEnvelope = !desenhaEnvelope;
+        envelope = !envelope;
+        forcaBruta = false;
         break;
     case 'f':
-        forcabruta();
+        forcaBruta = !forcaBruta;
+        envelope = false;
+        break;
+    case 't':
+        ContaTempo(3);
         break;
     case ' ':
         desenhaEixos = !desenhaEixos;
