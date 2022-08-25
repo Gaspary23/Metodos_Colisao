@@ -32,7 +32,7 @@ using namespace std;
 
 #include "Ponto.h"
 #include "Poligono.h"
-
+#include "ListaDeCoresRGB.h"
 #include "Temporizador.h"
 Temporizador T;
 double AccumDeltaT = 0;
@@ -271,6 +271,22 @@ void DesenhaLinha(Ponto P1, Ponto P2)
     glVertex3f(P2.x, P2.y, P2.z);
     glEnd();
 }
+// **********************************************************************
+// void pintaPontosInternos()
+// pinta os pontos dentro do triangulo
+//
+// **********************************************************************
+void pintaPontosInternos() {
+    glColor3f(1.0f, 0.0f, 0.0f);
+    glBegin(GL_POINTS);
+    for (int i = 0; i < PontosInternos.getNVertices(); i++) {
+        Ponto P = PontosInternos.getVertice(i);
+        defineCor(MediumForestGreen);
+        glVertex3f(P.x,P.y,P.z);
+    }
+    glEnd();
+}
+
 // **********************************************************************
 //  void forcabruta() --add
 //  Executa o algoritmo de forca bruta
