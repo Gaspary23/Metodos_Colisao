@@ -53,25 +53,6 @@ bool FoiClicado = false;
 bool envelope = 0;
 bool quadtree = 0;
 
-void DesenhaEnvelope();
-
-// **********************************************************************
-// GeraLista(int qtd) --add
-//      Metodo que cria a lista que sera usada para armazenar os pontos
-// **********************************************************************
-void GeraLista(int qtd)
-{
-    Ponto *v;
-    int i;
-    v = (Ponto *)malloc(qtd * sizeof(Ponto));
-    for (i = 0; i < qtd; ++i)
-    {
-        v[i] = (Ponto(0, 0, 0));
-    }
-    printf("\n");
-    free(v);
-}
-
 // **********************************************************************
 // GeraPontos(int qtd)
 //      MŽtodo que gera pontos aleat—rios no intervalo [Min..Max]
@@ -129,6 +110,7 @@ void CriaEnvelope() {
     vetor.rotacionaZ(90);
     Envelope.insereVertice(vetor);
 }
+
 // **********************************************************************
 // void PosicionaTrianguloDoCampoDeVisao()
 //  Posiciona o campo de vis‹o na posicao PosicaoDoCampoDeVisao,
@@ -199,9 +181,7 @@ void init()
 
     // Gera ou Carrega os pontos do cenario.
     // Note que o "aspect ratio" dos pontos deve ser o mesmo
-    // da janela.
-
-    // PontosDoCenario.LePoligono("PontosDenteDeSerra.txt");
+    // da janela.Ponto ponto : PontosDoCenario.getNVertices()
     GeraPontos(1000, Ponto(0, 0), Ponto(500, 500));
 
     PontosDoCenario.obtemLimites(Min, Max);
@@ -298,7 +278,6 @@ void DesenhaLinha(Ponto P1, Ponto P2)
 // **********************************************************************
 void display(void)
 {
-
     // Limpa a tela coma cor de fundo
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -362,10 +341,39 @@ void ContaTempo(double tempo)
     }
 }
 // **********************************************************************
+//  void forcabruta() --add
+//  Executa o algoritmo de forca bruta
+//
+// **********************************************************************
+void forcabruta()
+{   
+    int sinais[3];
+    for (int i = 0; i < PontosDoCenario.getNVertices(); i++){
+        Ponto auxiliar = {0,0,0};
+        for (int j = 0 ; j < 3; j++){
+            Ponto vetorTriangulo = CampoDeVisao.getVertice(j) - CampoDeVisao.getVertice((j+1)%3);
+            Ponto vetorPonto = PontosDoCenario.getVertice(i) - CampoDeVisao.getVertice(j);
+
+            ProdVetorial(vetorTriangulo, vetorPonto, auxiliar);
+            sinais[j] = auxiliar.z;
+        }
+        if (sinais[0] > 0 && sinais[1] > 0 && sinais[2] > 0 || sinais[0] < 0 && sinais[1] < 0 && sinais[2] < 0) {
+            cout << "\nPonto " << i << " esta dentro do campo de visao" << endl;
+        }
+    }
+}
+// **********************************************************************
+// void calculaEnvelope()
+// verifica se os pontos estão dentro do envelope
+//
+// **********************************************************************
+void calculaEnvelope() {
+    
+}
+// **********************************************************************
 //  void keyboard ( unsigned char key, int x, int y )
 //
 // **********************************************************************
-
 void keyboard(unsigned char key, int x, int y)
 {
 
@@ -379,6 +387,9 @@ void keyboard(unsigned char key, int x, int y)
         break;
     case 'e':
         desenhaEnvelope = !desenhaEnvelope;
+        break;
+    case 'f':
+        forcabruta();
         break;
     case ' ':
         desenhaEixos = !desenhaEixos;
@@ -445,36 +456,6 @@ void Mouse(int button, int state, int x, int y)
     gluUnProject(wx, wy, wz, modelview, projection, viewport, &ox, &oy, &oz);
     PontoClicado = Ponto(ox, oy, oz);
     FoiClicado = true;
-}
-// **********************************************************************
-//  void forcabruta() --add
-//  Executa o algoritmo de forca bruta
-//
-// **********************************************************************
-void forcabruta(int qtd)
-{
-    if (envelope = 1)
-    {
-        // implementar propriedades de envelope;
-    }
-    if (quadtree = 1)
-    {
-        // implementar propriedades de quadtree;
-    }
-    /*
-     int p=0;
-     int arraytemp[3] = {0,0,0};
-     for (int p=0;p<qtd;p++){
-     for (int i =0; i <= 2; i++){
-     arraytemp[i]= (listPontos[p]) - CampoDeVisao.getVertice(i);
-     }
-     if (arraytemp[0]<0 && arraytemp[1]<0 && arraytemp[2]<0){
-     TODO: colocar na lista de pontos dentro do triangulo
-    }
-     else{
-     TODO: colocar na lista de pontos fora do triangulo
-    }
-    }*/
 }
 
 // **********************************************************************
