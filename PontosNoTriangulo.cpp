@@ -1,6 +1,6 @@
 // **********************************************************************
 // PUCRS/Escola PolitŽcnica
-// COMPUTA‚ÌO GRçFICA
+// COMPUTAÇÃO GRÁFICA
 //
 // Programa basico para criar aplicacoes 2D em OpenGL
 //
@@ -50,7 +50,7 @@ bool desenhaEixos = true;
 bool FoiClicado = false;
 
 // Variaveis que controlam as propriedades do algoritmo de forca bruta --add
-bool forca_bruta = false;
+bool forca_bruta = true;
 bool envelope   = false;
 bool quadtree   = false;
 
@@ -364,7 +364,7 @@ void display(void)
 
     if (envelope) {
         glLineWidth(3);
-        glColor3f(1, 0, 0);
+        glColor3f(0, 0, 0);
         Envelope.desenhaPoligono();
         calculaEnvelope();
         for(int i = 0; i < PontosInternos.getNVertices(); i++) {
@@ -376,7 +376,7 @@ void display(void)
     }
 
     glLineWidth(3);
-    glColor3f(1, 0, 0); // R, G, B  [0..1]
+    glColor3f(0, 0, 0); // R, G, B  [0..1]
     CampoDeVisao.desenhaPoligono();
 
     if (FoiClicado)
@@ -431,8 +431,10 @@ void keyboard(unsigned char key, int x, int y)
         forca_bruta = false;
         break;
     case 'f':
-        forca_bruta = !forca_bruta;
-        envelope = false;
+        if (envelope) {
+            forca_bruta = !forca_bruta;
+            envelope = false;
+        }
         break;
     case 't':
         ContaTempo(3);
