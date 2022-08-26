@@ -182,6 +182,8 @@ void init()
     // Gera ou Carrega os pontos do cenario.
     // Note que o "aspect ratio" dos pontos deve ser o mesmo
     // da janela.Ponto ponto : PontosDoCenario.getNVertices()
+    
+    //PontosDoCenario.LePoligono("PoligonoDeTeste.txt");
     GeraPontos(1000, Ponto(0, 0), Ponto(500, 500));
 
     PontosDoCenario.obtemLimites(Min, Max);

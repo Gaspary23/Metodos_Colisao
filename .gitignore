@@ -12,3 +12,4 @@ GL/
 obj/
 *.layout
 release/
+libTxts/
