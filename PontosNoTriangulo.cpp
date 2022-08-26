@@ -39,6 +39,7 @@ double AccumDeltaT = 0;
 
 // Variaveis que controlam o triangulo do campo de visao
 Poligono PontosDoCenario, CampoDeVisao, TrianguloBase, Envelope, PontosInternos;
+vector<int> PontosInternosIndices;
 float AnguloDoCampoDeVisao = 0.0;
 
 // Limites logicos da area de desenho
@@ -281,12 +282,13 @@ void pintaPontosInternos() {
     glBegin(GL_POINTS);
     for (int i = 0; i < PontosInternos.getNVertices(); i++) {
         Ponto P = PontosInternos.getVertice(i);
-        defineCor(MediumForestGreen);
+        defineCor(LimeGreen);
         glVertex3f(P.x,P.y,P.z);
     }
+    Poligono vazio;
+    PontosInternos = vazio;
     glEnd();
 }
-
 // **********************************************************************
 //  void forcabruta() --add
 //  Executa o algoritmo de forca bruta
@@ -305,7 +307,7 @@ void forcabruta()
             sinais[j] = auxiliar.z;
         }
         if (sinais[0] > 0 && sinais[1] > 0 && sinais[2] > 0 || sinais[0] < 0 && sinais[1] < 0 && sinais[2] < 0) {
-            cout << "\nPonto " << i << " esta dentro do campo de visao" << endl;
+            PontosInternos.insereVertice(PontosDoCenario.getVertice(i));
         }
     }
 }
@@ -320,7 +322,7 @@ void calculaEnvelope() {
 
         if(ponto.x >= Envelope.getVertice(0).x && ponto.x <= Envelope.getVertice(2).x && 
            ponto.y >= Envelope.getVertice(1).y && ponto.y <= Envelope.getVertice(3).y) {
-            cout << "\nPonto " << i << " esta dentro do envelope" << endl;
+            PontosInternos.insereVertice(ponto);
         }
     }
 }
@@ -347,9 +349,13 @@ void display(void)
         DesenhaEixos();
     }
 
+    glPointSize(2);
+    glColor3f(1, 1, 0); // R, G, B  [0..1]
+    PontosDoCenario.desenhaVertices();
+
     if(forcaBruta) {
         forcabruta();
-        //chamar pintura
+        pintaPontosInternos();
     }
 
     if (envelope) {
@@ -357,12 +363,8 @@ void display(void)
         glColor3f(1, 0, 0);
         Envelope.desenhaPoligono();
         calculaEnvelope();
-        //chamar pintura
+        pintaPontosInternos();
     }
-
-    // glPointSize(5);
-    glColor3f(1, 1, 0); // R, G, B  [0..1]
-    PontosDoCenario.desenhaVertices();
 
     glLineWidth(3);
     glColor3f(1, 0, 0); // R, G, B  [0..1]
