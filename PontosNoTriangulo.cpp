@@ -385,6 +385,13 @@ void display(void)
         FoiClicado = false;
     }
 
+    int pontosInternos = envelope ? PontosInternos.getNVertices()/2 : PontosInternos.getNVertices();
+    cout << "\n\n\n\n\n\n\n\nNumero de pontos dentro do triangulo: " << pontosInternos << endl;
+    cout << "Numero de pontos fora do triangulo: " << PontosDoCenario.getNVertices()-PontosInternos.getNVertices() << endl;
+    if (envelope) {
+        cout << "Numero de pontos dentro do envelope: " << PontosFalsos.getNVertices() << endl;
+    }
+
     // Limpa a os pontos pintados com o movimento
     Poligono vazio;
     PontosInternos = vazio;
@@ -423,12 +430,11 @@ void keyboard(unsigned char key, int x, int y)
 
     switch (key)
     {
-    case 27:     // Termina o programa qdo
-        exit(0); // a tecla ESC for pressionada
-        break;
     case 'e':
-        envelope = !envelope;
-        forca_bruta = false;
+        if (forca_bruta) {
+            envelope = !envelope;
+            forca_bruta = false;
+        }    
         break;
     case 'f':
         if (envelope) {
@@ -441,6 +447,9 @@ void keyboard(unsigned char key, int x, int y)
         break;
     case ' ':
         desenhaEixos = !desenhaEixos;
+        break;
+    case 27:     // Termina o programa qdo
+        exit(0); // a tecla ESC for pressionada
         break;
     default:
         break;
