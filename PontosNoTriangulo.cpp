@@ -38,7 +38,7 @@ Temporizador T;
 double AccumDeltaT = 0;
 
 // Variaveis que controlam o triangulo do campo de visao
-Poligono PontosDoCenario, CampoDeVisao, TrianguloBase, Envelope, PontosInternos;
+Poligono PontosDoCenario, PontosFalsos, PontosInternos, CampoDeVisao, TrianguloBase, Envelope;
 vector<int> PontosInternosIndices;
 float AnguloDoCampoDeVisao = 0.0;
 
@@ -50,7 +50,7 @@ bool desenhaEixos = true;
 bool FoiClicado = false;
 
 // Variaveis que controlam as propriedades do algoritmo de forca bruta --add
-bool forcaBruta = false;
+bool forca_bruta = false;
 bool envelope   = false;
 bool quadtree   = false;
 
@@ -225,8 +225,8 @@ void animate()
     if (TempoTotal > 5.0)
     {
         cout << "Tempo Acumulado: " << TempoTotal << " segundos. ";
-        cout << "Nros de Frames sem desenho: " << nFrames << endl;
-        cout << "FPS(sem desenho): " << nFrames / TempoTotal << endl;
+        /*cout << "Nros de Frames sem desenho: " << nFrames << endl;
+        cout << "FPS(sem desenho): " << nFrames / TempoTotal << endl;*/
         TempoTotal = 0;
         nFrames = 0;
     }
@@ -273,43 +273,39 @@ void DesenhaLinha(Ponto P1, Ponto P2)
     glEnd();
 }
 // **********************************************************************
-// void pintaPontosInternos()
-// pinta os pontos dentro do triangulo
+// void pintaPonto(Poligono pontos, int cor)
+// pinta um ponto com uma cor indicada
 //
 // **********************************************************************
-void pintaPontosInternos() {
+void pintaPonto(Ponto ponto, int cor) {
     glColor3f(1.0f, 0.0f, 0.0f);
     glBegin(GL_POINTS);
-    for (int i = 0; i < PontosInternos.getNVertices(); i++) {
-        Ponto P = PontosInternos.getVertice(i);
-        defineCor(LimeGreen);
-        glVertex3f(P.x,P.y,P.z);
-    }
-    Poligono vazio;
-    PontosInternos = vazio;
+    
+    defineCor(cor);
+    glVertex3f(ponto.x,ponto.y,ponto.z);    
     glEnd();
 }
 // **********************************************************************
-//  void forcabruta() --add
+//  void forcaBruta(Ponto ponto) 
 //  Executa o algoritmo de forca bruta
 //
 // **********************************************************************
-void forcabruta()
-{   
+bool forcaBruta(Ponto ponto) {
     int sinais[3];
-    for (int i = 0; i < PontosDoCenario.getNVertices(); i++){
-        Ponto auxiliar = {0,0,0};
-        for (int j = 0 ; j < 3; j++){
-            Ponto vetorTriangulo = CampoDeVisao.getVertice(j) - CampoDeVisao.getVertice((j+1)%3);
-            Ponto vetorPonto = PontosDoCenario.getVertice(i) - CampoDeVisao.getVertice(j);
+    Ponto auxiliar = {0,0,0};
+    for (int j = 0 ; j < 3; j++){
+        Ponto vetorTriangulo = CampoDeVisao.getVertice(j) - CampoDeVisao.getVertice((j+1)%3);
+        Ponto vetorPonto = ponto - CampoDeVisao.getVertice(j);
 
-            ProdVetorial(vetorTriangulo, vetorPonto, auxiliar);
-            sinais[j] = auxiliar.z;
-        }
-        if (sinais[0] > 0 && sinais[1] > 0 && sinais[2] > 0 || sinais[0] < 0 && sinais[1] < 0 && sinais[2] < 0) {
-            PontosInternos.insereVertice(PontosDoCenario.getVertice(i));
-        }
+        ProdVetorial(vetorTriangulo, vetorPonto, auxiliar);
+        sinais[j] = auxiliar.z;        
     }
+    if (sinais[0] > 0 && sinais[1] > 0 && sinais[2] > 0 || 
+        sinais[0] < 0 && sinais[1] < 0 && sinais[2] < 0) {
+        PontosInternos.insereVertice(ponto);
+        return true;
+    }
+    return false;
 }
 // **********************************************************************
 // void calculaEnvelope()
@@ -322,7 +318,11 @@ void calculaEnvelope() {
 
         if(ponto.x >= Envelope.getVertice(0).x && ponto.x <= Envelope.getVertice(2).x && 
            ponto.y >= Envelope.getVertice(1).y && ponto.y <= Envelope.getVertice(3).y) {
-            PontosInternos.insereVertice(ponto);
+            if(forcaBruta(ponto)) {
+                PontosInternos.insereVertice(ponto);
+            } else {
+                PontosFalsos.insereVertice(ponto);
+            }
         }
     }
 }
@@ -350,12 +350,16 @@ void display(void)
     }
 
     glPointSize(2);
-    glColor3f(1, 1, 0); // R, G, B  [0..1]
+    glColor3f(1, 0, 0); // R, G, B  [0..1]
     PontosDoCenario.desenhaVertices();
 
-    if(forcaBruta) {
-        forcabruta();
-        pintaPontosInternos();
+    if(forca_bruta) {
+        for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
+            forcaBruta(PontosDoCenario.getVertice(i));
+        }
+        for (int i = 0; i < PontosInternos.getNVertices(); i++) {
+            pintaPonto(PontosInternos.getVertice(i), Green);
+        }
     }
 
     if (envelope) {
@@ -363,7 +367,12 @@ void display(void)
         glColor3f(1, 0, 0);
         Envelope.desenhaPoligono();
         calculaEnvelope();
-        pintaPontosInternos();
+        for(int i = 0; i < PontosInternos.getNVertices(); i++) {
+            pintaPonto(PontosInternos.getVertice(i), Green);
+        }
+        for(int i = 0; i < PontosFalsos.getNVertices(); i++) {
+            pintaPonto(PontosFalsos.getVertice(i), Yellow);
+        }
     }
 
     glLineWidth(3);
@@ -375,6 +384,11 @@ void display(void)
         PontoClicado.imprime("- Ponto no universo: ", "\n");
         FoiClicado = false;
     }
+
+    // Limpa a os pontos pintados com o movimento
+    Poligono vazio;
+    PontosInternos = vazio;
+    PontosFalsos = vazio;
 
     glutSwapBuffers();
 }
@@ -414,10 +428,10 @@ void keyboard(unsigned char key, int x, int y)
         break;
     case 'e':
         envelope = !envelope;
-        forcaBruta = false;
+        forca_bruta = false;
         break;
     case 'f':
-        forcaBruta = !forcaBruta;
+        forca_bruta = !forca_bruta;
         envelope = false;
         break;
     case 't':
@@ -456,8 +470,6 @@ void arrow_keys(int a_keys, int x, int y)
     }
     PosicionaTrianguloDoCampoDeVisao();
     posicionaEnvelope();
-    cout << "Triangulo Base: " << endl;
-    TrianguloBase.imprimeVertices();
     glutPostRedisplay();
 }
 // **********************************************************************

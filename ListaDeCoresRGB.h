@@ -119,7 +119,9 @@ enum {
     Scarlet,
     Med_Purple,
     Light_Purple,
-    Very_Light_Purple
+    Very_Light_Purple,
+    Yellow,
+    Green
 };
 
 
