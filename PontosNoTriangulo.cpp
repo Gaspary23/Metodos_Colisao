@@ -41,6 +41,7 @@ double AccumDeltaT = 0;
 Poligono PontosDoCenario, PontosFalsos, PontosInternos, CampoDeVisao, TrianguloBase, Envelope;
 vector<int> PontosInternosIndices;
 float AnguloDoCampoDeVisao = 0.0;
+float DimensaoDoCampoDeVisao = 0.25;
 
 // Limites logicos da area de desenho
 Ponto Min, Max, Tamanho, Meio;
@@ -117,9 +118,9 @@ void CriaEnvelope() {
 //  com a orientacao "AnguloDoCampoDeVisao".
 //  O tamanho do campo de vis‹o eh de 25% da largura da janela.
 // **********************************************************************
-void PosicionaTrianguloDoCampoDeVisao()
+void PosicionaTrianguloDoCampoDeVisao(float dimensao)
 {
-    float tamanho = Tamanho.x * 0.25;
+    float tamanho = Tamanho.x * dimensao;
 
     Ponto temp;
     for (int i = 0; i < TrianguloBase.getNVertices(); i++)
@@ -202,7 +203,7 @@ void init()
     // Cria o triangulo que representa o campo de visao
     CriaTrianguloDoCampoDeVisao();
     CriaEnvelope();
-    PosicionaTrianguloDoCampoDeVisao();
+    PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao);
     posicionaEnvelope();
 }
 
@@ -388,11 +389,12 @@ void display(void)
     }
 
     int pontosInternos = envelope ? PontosInternos.getNVertices()/2 : PontosInternos.getNVertices();
-    cout << "\n\n\n\n\n\n\n\nNumero de pontos dentro do triangulo: " << pontosInternos << endl;
-    cout << "Numero de pontos fora do triangulo: " << PontosDoCenario.getNVertices()-PontosInternos.getNVertices() << endl;
+    cout << "Numero de pontos dentro do triangulo: " << pontosInternos << endl;
     if (envelope) {
         cout << "Numero de pontos dentro do envelope: " << PontosFalsos.getNVertices() << endl;
     }
+    cout << "Numero de pontos fora do triangulo: " << PontosDoCenario.getNVertices()-PontosInternos.getNVertices() << endl;
+    cout << "\n\n\n\n\n\n" << endl;
 
     // Limpa a os pontos pintados com o movimento
     Poligono vazio;
@@ -434,14 +436,27 @@ void keyboard(unsigned char key, int x, int y)
     {
     case 'e':
         if (forca_bruta) {
-            envelope = !envelope;
+            envelope = true;
             forca_bruta = false;
+            posicionaEnvelope();
         }    
         break;
     case 'f':
         if (envelope) {
-            forca_bruta = !forca_bruta;
+            forca_bruta = true;
             envelope = false;
+        }
+        break;
+    case 'm': 
+        PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao += 0.05);
+        if (envelope) {
+            posicionaEnvelope();
+        }
+        break;
+    case 'n':
+        PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao -= 0.05);
+        if (envelope) {
+            posicionaEnvelope();
         }
         break;
     case 't':
@@ -456,7 +471,6 @@ void keyboard(unsigned char key, int x, int y)
     default:
         break;
     }
-    // PosicionaTrianguloDoCampoDeVisao();
     glutPostRedisplay();
 }
 // **********************************************************************
@@ -481,7 +495,7 @@ void arrow_keys(int a_keys, int x, int y)
     default:
         break;
     }
-    PosicionaTrianguloDoCampoDeVisao();
+    PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao);
     posicionaEnvelope();
     glutPostRedisplay();
 }
