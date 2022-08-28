@@ -321,9 +321,7 @@ void calculaEnvelope() {
 
         if(ponto.x >= Envelope.getVertice(0).x && ponto.x <= Envelope.getVertice(2).x && 
            ponto.y >= Envelope.getVertice(1).y && ponto.y <= Envelope.getVertice(3).y) {
-            if(forcaBruta(ponto)) {
-                PontosInternos.insereVertice(ponto);
-            } else {
+            if(!forcaBruta(ponto)) {
                 PontosFalsos.insereVertice(ponto);
             }
         }
@@ -388,12 +386,11 @@ void display(void)
         FoiClicado = false;
     }
 
-    int pontosInternos = envelope ? PontosInternos.getNVertices()/2 : PontosInternos.getNVertices();
-    cout << "Numero de pontos dentro do triangulo: " << pontosInternos << endl;
+    cout << "Numero de pontos dentro do triangulo: " << PontosInternos.getNVertices() << endl;
     if (envelope) {
         cout << "Numero de pontos dentro do envelope: " << PontosFalsos.getNVertices() << endl;
     }
-    cout << "Numero de pontos fora do triangulo: " << PontosDoCenario.getNVertices()-PontosInternos.getNVertices() << endl;
+    cout << "Numero de pontos fora do triangulo: " << PontosDoCenario.getNVertices()-(PontosInternos.getNVertices()+PontosFalsos.getNVertices()) << endl;
     cout << "\n\n\n\n\n\n" << endl;
 
     // Limpa a os pontos pintados com o movimento
