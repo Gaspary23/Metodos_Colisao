@@ -445,15 +445,19 @@ void keyboard(unsigned char key, int x, int y)
         }
         break;
     case 'm': 
-        PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao += 0.05);
-        if (envelope) {
-            posicionaEnvelope();
+        if (DimensaoDoCampoDeVisao < 0.75) {
+            PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao += 0.05);
+            if (envelope) {
+                posicionaEnvelope();
+            }
         }
         break;
     case 'n':
-        PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao -= 0.05);
-        if (envelope) {
-            posicionaEnvelope();
+        if (DimensaoDoCampoDeVisao > 0.1) {
+            PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao -= 0.05);
+            if (envelope) {
+                posicionaEnvelope();
+            }
         }
         break;
     case 't':
