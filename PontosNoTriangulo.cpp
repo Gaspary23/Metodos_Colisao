@@ -177,8 +177,8 @@ void posicionaEnvelope() {
 // **********************************************************************
 void init()
 {
-    // Define a cor do fundo da tela (AZUL)
-    glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
+    // Define a cor do fundo da tela (Branco)
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
     // Gera ou Carrega os pontos do cenario.
     // Note que o "aspect ratio" dos pontos deve ser o mesmo
@@ -346,7 +346,7 @@ void display(void)
 
     if (desenhaEixos) {
         glLineWidth(1);
-        glColor3f(1, 1, 1); // R, G, B  [0..1]
+        glColor3f(0, 0, 0); // R, G, B  [0..1]
         DesenhaEixos();
     }
 
