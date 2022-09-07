@@ -8,16 +8,16 @@
 // pinho@pucrs.br
 // **********************************************************************
 
-#include <iostream>
 #include <cmath>
 #include <ctime>
 #include <fstream>
+#include <iostream>
 
 using namespace std;
 
 #ifdef WIN32
-#include <windows.h>
 #include <glut.h>
+#include <windows.h>
 #else
 #include <sys/time.h>
 #endif
@@ -30,16 +30,16 @@ using namespace std;
 #include <GL/glut.h>
 #endif
 
-#include "Ponto.h"
-#include "Poligono.h"
 #include "ListaDeCoresRGB.h"
+#include "Poligono.h"
+#include "Ponto.h"
 #include "Temporizador.h"
 Temporizador T;
 double AccumDeltaT = 0;
 
 // Variaveis que controlam o triangulo do campo de visao
-Poligono PontosDoCenario, PontosFalsos, PontosInternos, CampoDeVisao, TrianguloBase, Envelope;
-vector<int> PontosInternosIndices;
+Poligono PontosDoCenario, CampoDeVisao, TrianguloBase, Envelope;
+int pontosInternos, pontosFalsos;
 float AnguloDoCampoDeVisao = 0.0;
 float DimensaoDoCampoDeVisao = 0.25;
 
@@ -51,40 +51,38 @@ bool desenhaEixos = true;
 bool FoiClicado = false;
 
 // Variaveis que controlam as propriedades do algoritmo de forca bruta --add
-bool forca_bruta = true;
-bool envelope   = false;
-bool quadtree   = false;
+bool bool_forcaBruta = true;
+bool bool_Envelope = false;
+bool bool_Quadtree = false;
 
-typedef struct nodo_quadtree
-{
-    Ponto Min, Max; /* Limites do nodo */
-    bool cheia; /* Se o nodo estiver cheio, ele nao pode ser dividido */
+typedef struct nodo_quadtree {
+    Ponto Min, Max;                /* Limites do nodo */
+    bool cheia;                    /* Se o nodo estiver cheio, ele nao pode ser dividido */
     struct nodo_quadtree *quad[4]; /* 4 nodos-filhos*/
-    vector<Ponto> pontos; //pontos dentro do nodo
-    int qtd_pontos; //quantidade de pontos dentro do nodo
+    Ponto* pontos;                 // pontos dentro do nodo
+    int qtd_pontos;                // quantidade de pontos dentro do nodo
 
-}QUADTREE;
+} QUADTREE;
 
 QUADTREE *raiz;
 
-void criaArvore (QUADTREE *raiz, int nivel, int pontos_totais);
-void desenhaLimiteNodo(Ponto min, Ponto max);
+void criaArvore(QUADTREE *raiz, int nivel, int pontos_totais);
 void subdivide(QUADTREE *nodo, Ponto min, Ponto max);
-int pontosInternos(Ponto min, Ponto max);
+int pontosInternosEnvelope(Ponto min, Ponto max);
 void DesenhaLinha(Ponto P1, Ponto P2);
 
 void subdivide(QUADTREE *nodo, Ponto min, Ponto max) {
     Ponto meio;
-    //define o centro do nodo
+    // define o centro do nodo
     meio.x = (nodo->Min.x + nodo->Max.x) / 2;
     meio.y = (nodo->Min.y + nodo->Max.y) / 2;
-    
+
     // filho direita em cima
     nodo->quad[0]->Min.x = meio.x;
     nodo->quad[0]->Min.y = meio.y;
     nodo->quad[0]->Max = nodo->Max;
 
-    //filho esquerda em cima
+    // filho esquerda em cima
     nodo->quad[1]->Min.x = nodo->Min.x;
     nodo->quad[1]->Min.y = meio.y;
     nodo->quad[1]->Max.x = meio.x;
@@ -94,7 +92,7 @@ void subdivide(QUADTREE *nodo, Ponto min, Ponto max) {
     nodo->quad[2]->Min = nodo->Min;
     nodo->quad[2]->Max.x = meio.x;
     nodo->quad[2]->Max.y = meio.y;
-    
+
     // filho direita em baixo
     nodo->quad[3]->Min.x = meio.x;
     nodo->quad[3]->Min.y = nodo->Min.y;
@@ -102,11 +100,13 @@ void subdivide(QUADTREE *nodo, Ponto min, Ponto max) {
     nodo->quad[3]->Max.y = meio.y;
 }
 
-int pontosInternos(Ponto min, Ponto max) {
+int pontosInternosEnvelope(Ponto min, Ponto max) {
     int qtd_pontos = 0;
     for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
-        if (PontosDoCenario.getVertice(i).x >= min.x && PontosDoCenario.getVertice(i).x <= max.x && 
-            PontosDoCenario.getVertice(i).y >= min.y && PontosDoCenario.getVertice(i).y <= max.y) {
+        if (PontosDoCenario.getVertice(i).x >= min.x &&
+            PontosDoCenario.getVertice(i).x <= max.x &&
+            PontosDoCenario.getVertice(i).y >= min.y &&
+            PontosDoCenario.getVertice(i).y <= max.y) {
             qtd_pontos++;
         }
     }
@@ -117,14 +117,12 @@ int pontosInternos(Ponto min, Ponto max) {
 // GeraPontos(int qtd, Ponto Min, Ponto Max)
 //      MŽtodo que gera pontos aleat—rios no intervalo [Min..Max]
 // **********************************************************************
-void GeraPontos(unsigned long int qtd, Ponto Min, Ponto Max)
-{
+void GeraPontos(unsigned long int qtd, Ponto Min, Ponto Max) {
     time_t t;
     Ponto Escala;
     Escala = (Max - Min) * (1.0 / 1000.0);
     srand((unsigned)time(&t));
-    for (int i = 0; i < qtd; i++)
-    {
+    for (int i = 0; i < qtd; i++) {
         float x = rand() % 1000;
         float y = rand() % 1000;
         x = x * Escala.x + Min.x;
@@ -140,8 +138,7 @@ void GeraPontos(unsigned long int qtd, Ponto Min, Ponto Max)
 //  Este vetor fica armazenado nas vari‡veis "TrianguloBase" e
 //  "CampoDeVisao"
 // **********************************************************************
-void CriaTrianguloDoCampoDeVisao()
-{
+void CriaTrianguloDoCampoDeVisao() {
     Ponto vetor = Ponto(1, 0, 0);
 
     TrianguloBase.insereVertice(Ponto(0, 0, 0));
@@ -171,34 +168,27 @@ void CriaEnvelope() {
     Envelope.insereVertice(vetor);
 }
 
-void criaArvore (QUADTREE *raiz, int nivel, int pontos_totais) {
+void criaArvore(QUADTREE *raiz, int nivel, int pontos_totais) {
     if (nivel == 0) {
         raiz->cheia = true;
         return;
     }
 
-    Ponto min,max;
+    Ponto min, max;
     min.x = raiz->Min.x;
     min.y = raiz->Min.y;
     max.x = raiz->Max.x;
     max.y = raiz->Max.y;
-    raiz->qtd_pontos = pontosInternos(min,max);
+    raiz->qtd_pontos = pontosInternosEnvelope(min, max);
 
-    if(raiz->qtd_pontos <= pontos_totais) {
-    raiz->cheia = false;
+    if (raiz->qtd_pontos <= pontos_totais) {
         raiz->cheia = false;
         return;
     } else {
-        //cria os 4 nodos-filhos
-        for (int i = 0; i < 4; i++) {
-            raiz->quad[i] = new QUADTREE;
-            raiz->quad[i]->pontos.clear();
-        }
-
         cout << "cheguei aqui" << endl;
-        //subdivide(raiz,raiz->Min,raiz->Max);
+        // subdivide(raiz,raiz->Min,raiz->Max);
         for (int i = 0; i < 4; i++) {
-            DesenhaLinha(raiz->quad[i]->Min,raiz->quad[i]->Max);
+            DesenhaLinha(raiz->quad[i]->Min, raiz->quad[i]->Max);
             criaArvore(raiz->quad[i], nivel - 1, pontos_totais);
         }
     }
@@ -209,13 +199,11 @@ void criaArvore (QUADTREE *raiz, int nivel, int pontos_totais) {
 //  com a orientacao "AnguloDoCampoDeVisao".
 //  O tamanho do campo de vis‹o eh de 25% da largura da janela.
 // **********************************************************************
-void PosicionaTrianguloDoCampoDeVisao(float dimensao)
-{
+void PosicionaTrianguloDoCampoDeVisao(float dimensao) {
     float tamanho = Tamanho.x * dimensao;
 
     Ponto temp;
-    for (int i = 0; i < TrianguloBase.getNVertices(); i++)
-    {
+    for (int i = 0; i < TrianguloBase.getNVertices(); i++) {
         temp = TrianguloBase.getVertice(i);
         temp.rotacionaZ(AnguloDoCampoDeVisao);
         CampoDeVisao.alteraVertice(i, PosicaoDoCampoDeVisao + temp * tamanho);
@@ -225,8 +213,7 @@ void PosicionaTrianguloDoCampoDeVisao(float dimensao)
 // void AvancaCampoDeVisao(float distancia)
 //  Move o campo de vis‹o "distancia" unidades pra frente ou pra tras.
 // **********************************************************************
-void AvancaCampoDeVisao(float distancia)
-{
+void AvancaCampoDeVisao(float distancia) {
     Ponto vetor = Ponto(1, 0, 0);
     vetor.rotacionaZ(AnguloDoCampoDeVisao);
     PosicaoDoCampoDeVisao = PosicaoDoCampoDeVisao + vetor * distancia;
@@ -234,9 +221,9 @@ void AvancaCampoDeVisao(float distancia)
 // **********************************************************************
 //
 // **********************************************************************
-void posicionaEnvelope() {
+void posicionaEnvelope(Poligono* envelope) {
     float esquerda, direita, cima, baixo;
-    for(int i = 0; i < CampoDeVisao.getNVertices(); i++) {
+    for (int i = 0; i < CampoDeVisao.getNVertices(); i++) {
         if (i == 0) {
             esquerda = CampoDeVisao.getVertice(i).x;
             direita = CampoDeVisao.getVertice(i).x;
@@ -257,25 +244,24 @@ void posicionaEnvelope() {
             }
         }
     }
-    Envelope.alteraVertice(0, Ponto(esquerda, baixo, 0));
-    Envelope.alteraVertice(1, Ponto(direita, baixo, 0));
-    Envelope.alteraVertice(2, Ponto(direita, cima, 0));
-    Envelope.alteraVertice(3, Ponto(esquerda, cima, 0));
+    envelope->alteraVertice(0, Ponto(esquerda, baixo, 0));
+    envelope->alteraVertice(1, Ponto(direita, baixo, 0));
+    envelope->alteraVertice(2, Ponto(direita, cima, 0));
+    envelope->alteraVertice(3, Ponto(esquerda, cima, 0));
 }
 // **********************************************************************
 // void init()
 //  Faz as inicializacoes das variaveis de estado da aplicacao
 // **********************************************************************
-void init()
-{
+void init() {
     // Define a cor do fundo da tela (Branco)
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
     // Gera ou Carrega os pontos do cenario.
     // Note que o "aspect ratio" dos pontos deve ser o mesmo
     // da janela.Ponto ponto : PontosDoCenario.getNVertices()
-    
-    //PontosDoCenario.LePoligono("PoligonoDeTeste.txt");
+
+    // PontosDoCenario.LePoligono("PoligonoDeTeste.txt");
     GeraPontos(1000, Ponto(0, 0), Ponto(500, 500));
 
     PontosDoCenario.obtemLimites(Min, Max);
@@ -284,8 +270,8 @@ void init()
     Max.x++;
     Max.y++;
 
-    Meio = (Max + Min) * 0.5; // Ponto central da janela
-    Tamanho = (Max - Min);    // Tamanho da janela em X,Y
+    Meio = (Max + Min) * 0.5;  // Ponto central da janela
+    Tamanho = (Max - Min);     // Tamanho da janela em X,Y
 
     // Ajusta variaveis do triangulo que representa o campo de visao
     PosicaoDoCampoDeVisao = Meio;
@@ -295,7 +281,7 @@ void init()
     CriaTrianguloDoCampoDeVisao();
     CriaEnvelope();
     PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao);
-    posicionaEnvelope();
+    posicionaEnvelope(&Envelope);
 }
 
 double nFrames = 0;
@@ -303,21 +289,19 @@ double TempoTotal = 0;
 // **********************************************************************
 //
 // **********************************************************************
-void animate()
-{
+void animate() {
     double dt;
     dt = T.getDeltaT();
     AccumDeltaT += dt;
     TempoTotal += dt;
     nFrames++;
 
-    if (AccumDeltaT > 1.0 / 30) // fixa a atualiza ‹o da tela em 30
+    if (AccumDeltaT > 1.0 / 30)  // fixa a atualiza ‹o da tela em 30
     {
         AccumDeltaT = 0;
         glutPostRedisplay();
     }
-    if (TempoTotal > 5.0)
-    {
+    if (TempoTotal > 5.0) {
         cout << "Tempo Acumulado: " << TempoTotal << " segundos. ";
         /*cout << "Nros de Frames sem desenho: " << nFrames << endl;
         cout << "FPS(sem desenho): " << nFrames / TempoTotal << endl;*/
@@ -329,17 +313,14 @@ void animate()
 //  void reshape( int w, int h )
 //  trata o redimensionamento da janela OpenGL
 // **********************************************************************
-void reshape(int w, int h)
-{
+void reshape(int w, int h) {
     // Reset the coordinate system before modifying
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     // Define a area a ser ocupada pela area OpenGL dentro da Janela
     glViewport(0, 0, w, h);
     // Define os limites logicos da area OpenGL dentro da Janela
-    glOrtho(Min.x, Max.x,
-            Min.y, Max.y,
-            0, 1);
+    glOrtho(Min.x, Max.x, Min.y, Max.y, 0, 1);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -347,8 +328,7 @@ void reshape(int w, int h)
 // **********************************************************************
 //
 // **********************************************************************
-void DesenhaEixos()
-{
+void DesenhaEixos() {
     glBegin(GL_LINES);
     //  eixo horizontal
     glVertex2f(Min.x, Meio.y);
@@ -359,8 +339,7 @@ void DesenhaEixos()
     glEnd();
 }
 
-void DesenhaLinha(Ponto P1, Ponto P2)
-{
+void DesenhaLinha(Ponto P1, Ponto P2) {
     glBegin(GL_LINES);
     glVertex3f(P1.x, P1.y, P1.z);
     glVertex3f(P2.x, P2.y, P2.z);
@@ -374,29 +353,31 @@ void DesenhaLinha(Ponto P1, Ponto P2)
 void pintaPonto(Ponto ponto, int cor) {
     glColor3f(1.0f, 0.0f, 0.0f);
     glBegin(GL_POINTS);
-    
+
     defineCor(cor);
-    glVertex3f(ponto.x,ponto.y,ponto.z);    
+    glVertex3f(ponto.x, ponto.y, ponto.z);
     glEnd();
 }
 // **********************************************************************
-//  void forca333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333a(Ponto ponto) 
+//  void forcaBruta(Ponto ponto)
 //  Executa o algoritmo de forca bruta
 //
 // **********************************************************************
 bool forcaBruta(Ponto ponto) {
     int sinais[3];
-    Ponto auxiliar = {0,0,0};
-    for (int j = 0 ; j < 3; j++){
-        Ponto vetorTriangulo = CampoDeVisao.getVertice(j) - CampoDeVisao.getVertice((j+1)%3);
+    Ponto auxiliar = {0, 0, 0};
+    for (int j = 0; j < 3; j++) {
+        Ponto vetorTriangulo =
+            CampoDeVisao.getVertice(j) - CampoDeVisao.getVertice((j + 1) % 3);
         Ponto vetorPonto = ponto - CampoDeVisao.getVertice(j);
 
         ProdVetorial(vetorTriangulo, vetorPonto, auxiliar);
-        sinais[j] = auxiliar.z;        
+        sinais[j] = auxiliar.z;
     }
-    if (sinais[0] > 0 && sinais[1] > 0 && sinais[2] > 0 || 
+    if (sinais[0] > 0 && sinais[1] > 0 && sinais[2] > 0 ||
         sinais[0] < 0 && sinais[1] < 0 && sinais[2] < 0) {
-        PontosInternos.insereVertice(ponto);
+        pontosInternos++;
+        pintaPonto(ponto, Green);
         return true;
     }
     return false;
@@ -407,13 +388,16 @@ bool forcaBruta(Ponto ponto) {
 //
 // **********************************************************************
 void calculaEnvelope() {
-    for (int i = 0; i < PontosDoCenario.getNVertices(); i++){
+    for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
         Ponto ponto = PontosDoCenario.getVertice(i);
 
-        if(ponto.x >= Envelope.getVertice(0).x && ponto.x <= Envelope.getVertice(2).x && 
-           ponto.y >= Envelope.getVertice(1).y && ponto.y <= Envelope.getVertice(3).y) {
-            if(!forcaBruta(ponto)) {
-                PontosFalsos.insereVertice(ponto);
+        if (ponto.x >= Envelope.getVertice(0).x &&
+            ponto.x <= Envelope.getVertice(2).x &&
+            ponto.y >= Envelope.getVertice(1).y &&
+            ponto.y <= Envelope.getVertice(3).y) {
+            if (!forcaBruta(ponto)) {
+                pontosFalsos++;
+                pintaPonto(ponto, Yellow);
             }
         }
     }
@@ -422,8 +406,7 @@ void calculaEnvelope() {
 //  void display( void )
 //
 // **********************************************************************
-void display(void)
-{
+void display(void) {
     // Limpa a tela coma cor de fundo
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -437,57 +420,49 @@ void display(void)
 
     if (desenhaEixos) {
         glLineWidth(1);
-        glColor3f(0, 0, 0); // R, G, B  [0..1]
+        glColor3f(0, 0, 0);  // R, G, B  [0..1]
         DesenhaEixos();
     }
 
     glPointSize(2);
-    glColor3f(1, 0, 0); // R, G, B  [0..1]
+    glColor3f(1, 0, 0);  // R, G, B  [0..1]
     PontosDoCenario.desenhaVertices();
 
-    if(forca_bruta) {
+    if (bool_forcaBruta) {
         for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
             forcaBruta(PontosDoCenario.getVertice(i));
         }
-        for (int i = 0; i < PontosInternos.getNVertices(); i++) {
-            pintaPonto(PontosInternos.getVertice(i), Green);
-        }
     }
 
-    if (envelope) {
+    if (bool_Envelope) {
         glLineWidth(3);
         glColor3f(0, 0, 0);
         Envelope.desenhaPoligono();
         calculaEnvelope();
-        for(int i = 0; i < PontosInternos.getNVertices(); i++) {
-            pintaPonto(PontosInternos.getVertice(i), Green);
-        }
-        for(int i = 0; i < PontosFalsos.getNVertices(); i++) {
-            pintaPonto(PontosFalsos.getVertice(i), Yellow);
-        }
     }
 
     glLineWidth(3);
-    glColor3f(0, 0, 0); // R, G, B  [0..1]
+    glColor3f(0, 0, 0);  // R, G, B  [0..1]
     CampoDeVisao.desenhaPoligono();
 
-    if (FoiClicado)
-    {
+    if (FoiClicado) {
         PontoClicado.imprime("- Ponto no universo: ", "\n");
         FoiClicado = false;
     }
 
-    cout << "Numero de pontos dentro do triangulo: " << PontosInternos.getNVertices() << endl;
-    if (envelope) {
-        cout << "Numero de pontos dentro do envelope: " << PontosFalsos.getNVertices() << endl;
+    cout << "Numero de pontos dentro do triangulo: " << pontosInternos << endl;
+    if (bool_Envelope) {
+        cout << "Numero de pontos dentro do envelope: " << pontosFalsos << endl;
     }
-    cout << "Numero de pontos fora do triangulo: " << PontosDoCenario.getNVertices()-(PontosInternos.getNVertices()+PontosFalsos.getNVertices()) << endl;
-    cout << "\n\n\n\n\n\n" << endl;
+    cout << "Numero de pontos fora do triangulo: "
+         << PontosDoCenario.getNVertices() - (pontosInternos + pontosFalsos)
+         << endl;
+    cout << "\n\n\n\n\n\n"
+         << endl;
 
-    // Limpa a os pontos pintados com o movimento
-    Poligono vazio;
-    PontosInternos = vazio;
-    PontosFalsos = vazio;
+    // Limpa a contagem de pontos
+    pontosInternos = 0;
+    pontosFalsos = 0;
 
     glutSwapBuffers();
 }
@@ -496,18 +471,15 @@ void display(void)
 //      conta um certo nœmero de segundos e informa quanto frames
 // se passaram neste per’odo.
 // **********************************************************************
-void ContaTempo(double tempo)
-{
+void ContaTempo(double tempo) {
     Temporizador T;
 
     unsigned long cont = 0;
     cout << "Inicio contagem de " << tempo << "segundos ..." << flush;
-    while (true)
-    {
+    while (true) {
         tempo -= T.getDeltaT();
         cont++;
-        if (tempo <= 0.0)
-        {
+        if (tempo <= 0.0) {
             cout << "fim! - Passaram-se " << cont << " frames." << endl;
             break;
         }
@@ -517,86 +489,83 @@ void ContaTempo(double tempo)
 //  void keyboard ( unsigned char key, int x, int y )
 //
 // **********************************************************************
-void keyboard(unsigned char key, int x, int y)
-{
-
-    switch (key)
-    {
-    case 'e':
-        if (forca_bruta) {
-            envelope = true;
-            forca_bruta = false;
-            posicionaEnvelope();
-        }    
-        break;
-    case 'f':
-        if (envelope) {
-            forca_bruta = true;
-            envelope = false;
-        }
-        break;
-    case 'q':
-        if(envelope || forca_bruta) {
-            envelope = false;
-            forca_bruta = false;
-            quadtree = true;
-            criaArvore(raiz, 10, 10);
-        }
-        break;
-    case 'm': 
-        if (DimensaoDoCampoDeVisao < 0.75) {
-            PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao += 0.05);
-            if (envelope) {
-                posicionaEnvelope();
+void keyboard(unsigned char key, int x, int y) {
+    switch (key) {
+        case 'e':
+            if (bool_forcaBruta || bool_Quadtree) {
+                bool_forcaBruta = false;
+                bool_Envelope = true;
+                bool_Quadtree = false;
+                posicionaEnvelope(&Envelope);
             }
-        }
-        break;
-    case 'n':
-        if (DimensaoDoCampoDeVisao > 0.1) {
-            PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao -= 0.05);
-            if (envelope) {
-                posicionaEnvelope();
+            break;
+        case 'f':
+            if (bool_Envelope || bool_Quadtree) {
+                bool_Envelope = false;
+                bool_forcaBruta = true;
+                bool_Quadtree = false;
             }
-        }
-        break;
-    case 't':
-        ContaTempo(3);
-        break;
-    case ' ':
-        desenhaEixos = !desenhaEixos;
-        break;
-    case 27:     // Termina o programa qdo
-        exit(0); // a tecla ESC for pressionada
-        break;
-    default:
-        break;
+            break;
+        case 'q':
+            if (bool_Envelope || bool_forcaBruta) {
+                bool_Envelope = false;
+                bool_forcaBruta = false;
+                bool_Quadtree = true;
+                criaArvore(raiz, 10, 10);
+            }
+            break;
+        case 'm':
+            if (DimensaoDoCampoDeVisao < 0.75) {
+                PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao += 0.05);
+                if (bool_Envelope) {
+                    posicionaEnvelope(&Envelope);
+                }
+            }
+            break;
+        case 'n':
+            if (DimensaoDoCampoDeVisao > 0.1) {
+                PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao -= 0.05);
+                if (bool_Envelope) {
+                    posicionaEnvelope(&Envelope);
+                }
+            }
+            break;
+        case 't':
+            ContaTempo(3);
+            break;
+        case ' ':
+            desenhaEixos = !desenhaEixos;
+            break;
+        case 27:      // Termina o programa qdo
+            exit(0);  // a tecla ESC for pressionada
+            break;
+        default:
+            break;
     }
     glutPostRedisplay();
 }
 // **********************************************************************
 //  void arrow_keys ( int a_keys, int x, int y )
 // **********************************************************************
-void arrow_keys(int a_keys, int x, int y)
-{
-    switch (a_keys)
-    {
-    case GLUT_KEY_LEFT: // Se pressionar LEFT
-        AnguloDoCampoDeVisao += 2;
-        break;
-    case GLUT_KEY_RIGHT: // Se pressionar RIGHT
-        AnguloDoCampoDeVisao -= 2;
-        break;
-    case GLUT_KEY_UP:
-        AvancaCampoDeVisao(2);
-        break;
-    case GLUT_KEY_DOWN:
-        AvancaCampoDeVisao(-2);
-        break;
-    default:
-        break;
+void arrow_keys(int a_keys, int x, int y) {
+    switch (a_keys) {
+        case GLUT_KEY_LEFT:  // Se pressionar LEFT
+            AnguloDoCampoDeVisao += 2;
+            break;
+        case GLUT_KEY_RIGHT:  // Se pressionar RIGHT
+            AnguloDoCampoDeVisao -= 2;
+            break;
+        case GLUT_KEY_UP:
+            AvancaCampoDeVisao(2);
+            break;
+        case GLUT_KEY_DOWN:
+            AvancaCampoDeVisao(-2);
+            break;
+        default:
+            break;
     }
     PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao);
-    posicionaEnvelope();
+    posicionaEnvelope(&Envelope);
     glutPostRedisplay();
 }
 // **********************************************************************
@@ -605,17 +574,14 @@ void arrow_keys(int a_keys, int x, int y)
 // na glOrtho (ver fun ‹o reshape)
 // Este c—digo Ž baseado em http://hamala.se/forums/viewtopic.php?t=20
 // **********************************************************************
-void Mouse(int button, int state, int x, int y)
-{
+void Mouse(int button, int state, int x, int y) {
     GLint viewport[4];
     GLdouble modelview[16], projection[16];
     GLfloat wx = x, wy, wz;
     GLdouble ox = 0.0, oy = 0.0, oz = 0.0;
 
-    if (state != GLUT_DOWN)
-        return;
-    if (button != GLUT_RIGHT_BUTTON)
-        return;
+    if (state != GLUT_DOWN) return;
+    if (button != GLUT_RIGHT_BUTTON) return;
     cout << "Botao da direita! ";
 
     glGetIntegerv(GL_VIEWPORT, viewport);
@@ -633,8 +599,7 @@ void Mouse(int button, int state, int x, int y)
 //  void main ( int argc, char** argv )
 //
 // **********************************************************************
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     cout << "Programa OpenGL" << endl;
 
     glutInit(&argc, argv);
