@@ -55,6 +55,64 @@ bool forca_bruta = true;
 bool envelope   = false;
 bool quadtree   = false;
 
+typedef struct nodo_quadtree
+{
+    Ponto Min, Max; /* Limites do nodo */
+    bool cheia; /* Se o nodo estiver cheio, ele nao pode ser dividido */
+    struct nodo_quadtree *quad[4]; /* 4 nodos-filhos*/
+    vector<Ponto> pontos; //pontos dentro do nodo
+    int qtd_pontos; //quantidade de pontos dentro do nodo
+
+}QUADTREE;
+
+QUADTREE *raiz;
+
+void criaArvore (QUADTREE *raiz, int nivel, int pontos_totais);
+void desenhaLimiteNodo(Ponto min, Ponto max);
+void subdivide(QUADTREE *nodo, Ponto min, Ponto max);
+int pontosInternos(Ponto min, Ponto max);
+void DesenhaLinha(Ponto P1, Ponto P2);
+
+void subdivide(QUADTREE *nodo, Ponto min, Ponto max) {
+    Ponto meio;
+    //define o centro do nodo
+    meio.x = (nodo->Min.x + nodo->Max.x) / 2;
+    meio.y = (nodo->Min.y + nodo->Max.y) / 2;
+    
+    // filho direita em cima
+    nodo->quad[0]->Min.x = meio.x;
+    nodo->quad[0]->Min.y = meio.y;
+    nodo->quad[0]->Max = nodo->Max;
+
+    //filho esquerda em cima
+    nodo->quad[1]->Min.x = nodo->Min.x;
+    nodo->quad[1]->Min.y = meio.y;
+    nodo->quad[1]->Max.x = meio.x;
+    nodo->quad[1]->Max.y = nodo->Max.y;
+
+    // filho esquerda em baixo
+    nodo->quad[2]->Min = nodo->Min;
+    nodo->quad[2]->Max.x = meio.x;
+    nodo->quad[2]->Max.y = meio.y;
+    
+    // filho direita em baixo
+    nodo->quad[3]->Min.x = meio.x;
+    nodo->quad[3]->Min.y = nodo->Min.y;
+    nodo->quad[3]->Max.x = nodo->Max.x;
+    nodo->quad[3]->Max.y = meio.y;
+}
+
+int pontosInternos(Ponto min, Ponto max) {
+    int qtd_pontos = 0;
+    for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
+        if (PontosDoCenario.getVertice(i).x >= min.x && PontosDoCenario.getVertice(i).x <= max.x && 
+            PontosDoCenario.getVertice(i).y >= min.y && PontosDoCenario.getVertice(i).y <= max.y) {
+            qtd_pontos++;
+        }
+    }
+    return qtd_pontos;
+}
+
 // **********************************************************************
 // GeraPontos(int qtd, Ponto Min, Ponto Max)
 //      MŽtodo que gera pontos aleat—rios no intervalo [Min..Max]
@@ -97,6 +155,7 @@ void CriaTrianguloDoCampoDeVisao()
     TrianguloBase.insereVertice(vetor);
     CampoDeVisao.insereVertice(vetor);
 }
+
 void CriaEnvelope() {
     Ponto vetor = Ponto(1, 0, 0);
 
@@ -112,6 +171,38 @@ void CriaEnvelope() {
     Envelope.insereVertice(vetor);
 }
 
+void criaArvore (QUADTREE *raiz, int nivel, int pontos_totais) {
+    if (nivel == 0) {
+        raiz->cheia = true;
+        return;
+    }
+
+    Ponto min,max;
+    min.x = raiz->Min.x;
+    min.y = raiz->Min.y;
+    max.x = raiz->Max.x;
+    max.y = raiz->Max.y;
+    raiz->qtd_pontos = pontosInternos(min,max);
+
+    if(raiz->qtd_pontos <= pontos_totais) {
+    raiz->cheia = false;
+        raiz->cheia = false;
+        return;
+    } else {
+        //cria os 4 nodos-filhos
+        for (int i = 0; i < 4; i++) {
+            raiz->quad[i] = new QUADTREE;
+            raiz->quad[i]->pontos.clear();
+        }
+
+        cout << "cheguei aqui" << endl;
+        //subdivide(raiz,raiz->Min,raiz->Max);
+        for (int i = 0; i < 4; i++) {
+            DesenhaLinha(raiz->quad[i]->Min,raiz->quad[i]->Max);
+            criaArvore(raiz->quad[i], nivel - 1, pontos_totais);
+        }
+    }
+}
 // **********************************************************************
 // void PosicionaTrianguloDoCampoDeVisao()
 //  Posiciona o campo de vis‹o na posicao PosicaoDoCampoDeVisao,
@@ -289,7 +380,7 @@ void pintaPonto(Ponto ponto, int cor) {
     glEnd();
 }
 // **********************************************************************
-//  void forcaBruta(Ponto ponto) 
+//  void forca333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333a(Ponto ponto) 
 //  Executa o algoritmo de forca bruta
 //
 // **********************************************************************
@@ -442,6 +533,14 @@ void keyboard(unsigned char key, int x, int y)
         if (envelope) {
             forca_bruta = true;
             envelope = false;
+        }
+        break;
+    case 'q':
+        if(envelope || forca_bruta) {
+            envelope = false;
+            forca_bruta = false;
+            quadtree = true;
+            criaArvore(raiz, 10, 10);
         }
         break;
     case 'm': 
