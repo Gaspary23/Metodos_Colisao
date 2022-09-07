@@ -44,7 +44,7 @@ float AnguloDoCampoDeVisao = 0.0;
 float DimensaoDoCampoDeVisao = 0.25;
 
 // Limites logicos da area de desenho
-Ponto Min, Max, Tamanho, Meio;
+Ponto Minimo, Maximo, Tamanho, Meio;
 Ponto PosicaoDoCampoDeVisao, PontoClicado;
 
 bool desenhaEixos = true;
@@ -58,64 +58,19 @@ bool bool_Quadtree = false;
 typedef struct nodo_quadtree {
     Ponto Min, Max;                /* Limites do nodo */
     bool cheia;                    /* Se o nodo estiver cheio, ele nao pode ser dividido */
-    struct nodo_quadtree *quad[4]; /* 4 nodos-filhos*/
-    Ponto* pontos;                 // pontos dentro do nodo
+    struct nodo_quadtree *filho[4]; /* 4 nodos-filhos*/
+    Ponto *pontos;                 // pontos dentro do nodo
     int qtd_pontos;                // quantidade de pontos dentro do nodo
 
 } QUADTREE;
 
-QUADTREE *raiz;
+QUADTREE *raiz;  // raiz da quadtree
 
-void criaArvore(QUADTREE *raiz, int nivel, int pontos_totais);
 void subdivide(QUADTREE *nodo, Ponto min, Ponto max);
-int pontosInternosEnvelope(Ponto min, Ponto max);
 void DesenhaLinha(Ponto P1, Ponto P2);
-
-void subdivide(QUADTREE *nodo, Ponto min, Ponto max) {
-    Ponto meio;
-    // define o centro do nodo
-    meio.x = (nodo->Min.x + nodo->Max.x) / 2;
-    meio.y = (nodo->Min.y + nodo->Max.y) / 2;
-
-    // filho direita em cima
-    nodo->quad[0]->Min.x = meio.x;
-    nodo->quad[0]->Min.y = meio.y;
-    nodo->quad[0]->Max = nodo->Max;
-
-    // filho esquerda em cima
-    nodo->quad[1]->Min.x = nodo->Min.x;
-    nodo->quad[1]->Min.y = meio.y;
-    nodo->quad[1]->Max.x = meio.x;
-    nodo->quad[1]->Max.y = nodo->Max.y;
-
-    // filho esquerda em baixo
-    nodo->quad[2]->Min = nodo->Min;
-    nodo->quad[2]->Max.x = meio.x;
-    nodo->quad[2]->Max.y = meio.y;
-
-    // filho direita em baixo
-    nodo->quad[3]->Min.x = meio.x;
-    nodo->quad[3]->Min.y = nodo->Min.y;
-    nodo->quad[3]->Max.x = nodo->Max.x;
-    nodo->quad[3]->Max.y = meio.y;
-}
-
-int pontosInternosEnvelope(Ponto min, Ponto max) {
-    int qtd_pontos = 0;
-    for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
-        if (PontosDoCenario.getVertice(i).x >= min.x &&
-            PontosDoCenario.getVertice(i).x <= max.x &&
-            PontosDoCenario.getVertice(i).y >= min.y &&
-            PontosDoCenario.getVertice(i).y <= max.y) {
-            qtd_pontos++;
-        }
-    }
-    return qtd_pontos;
-}
-
 // **********************************************************************
 // GeraPontos(int qtd, Ponto Min, Ponto Max)
-//      MŽtodo que gera pontos aleat—rios no intervalo [Min..Max]
+//      Metodo que gera pontos aleatorios no intervalo [Min..Max]
 // **********************************************************************
 void GeraPontos(unsigned long int qtd, Ponto Min, Ponto Max) {
     time_t t;
@@ -135,7 +90,7 @@ void GeraPontos(unsigned long int qtd, Ponto Min, Ponto Max) {
 // void CriaTrianguloDoCampoDeVisao()
 //  Cria um triangulo a partir do vetor (1,0,0), girando este vetor
 //  em 45 e -45 graus.
-//  Este vetor fica armazenado nas vari‡veis "TrianguloBase" e
+//  Este vetor fica armazenado nas variaveis "TrianguloBase" e
 //  "CampoDeVisao"
 // **********************************************************************
 void CriaTrianguloDoCampoDeVisao() {
@@ -168,36 +123,53 @@ void CriaEnvelope() {
     Envelope.insereVertice(vetor);
 }
 
-void criaArvore(QUADTREE *raiz, int nivel, int pontos_totais) {
-    if (nivel == 0) {
-        raiz->cheia = true;
-        return;
-    }
+void subdivide(QUADTREE *nodo, Ponto min, Ponto max) {
+    // define o centro do nodo
+    float meioX = (nodo->Min.x + nodo->Max.x) / 2;
+    float meioY = (nodo->Min.y + nodo->Max.y) / 2;
 
-    Ponto min, max;
-    min.x = raiz->Min.x;
-    min.y = raiz->Min.y;
-    max.x = raiz->Max.x;
-    max.y = raiz->Max.y;
-    raiz->qtd_pontos = pontosInternosEnvelope(min, max);
+    // filho direita em cima
+    nodo->filho[0]->Min.x = meioX;
+    nodo->filho[0]->Min.y = meioY;
+    nodo->filho[0]->Max = nodo->Max;
 
-    if (raiz->qtd_pontos <= pontos_totais) {
-        raiz->cheia = false;
-        return;
-    } else {
-        cout << "cheguei aqui" << endl;
-        // subdivide(raiz,raiz->Min,raiz->Max);
-        for (int i = 0; i < 4; i++) {
-            DesenhaLinha(raiz->quad[i]->Min, raiz->quad[i]->Max);
-            criaArvore(raiz->quad[i], nivel - 1, pontos_totais);
-        }
-    }
+    // filho esquerda em cima
+    nodo->filho[1]->Min.x = nodo->Min.x;
+    nodo->filho[1]->Min.y = meioY;
+    nodo->filho[1]->Max.x = meioX;
+    nodo->filho[1]->Max.y = nodo->Max.y;
+
+    // filho esquerda em baixo
+    nodo->filho[2]->Min = nodo->Min;
+    nodo->filho[2]->Max.x = meioX;
+    nodo->filho[2]->Max.y = meioY;
+
+    // filho direita em baixo
+    nodo->filho[3]->Min.x = meioX;
+    nodo->filho[3]->Min.y = nodo->Min.y;
+    nodo->filho[3]->Max.x = nodo->Max.x;
+    nodo->filho[3]->Max.y = meioY;
 }
+
+void criaQuadTree(QUADTREE *nodo, Ponto min, Ponto max) {
+    nodo->Min = min;
+    nodo->Max = max;
+    nodo->cheia = false;
+    nodo->qtd_pontos = 0;
+    nodo->pontos = NULL;
+
+    for (int i = 0; i < 4; i++) {
+        nodo->filho[i] = (QUADTREE *)malloc(sizeof(QUADTREE));
+    }
+
+    subdivide(nodo, min, max);
+}
+
 // **********************************************************************
 // void PosicionaTrianguloDoCampoDeVisao()
-//  Posiciona o campo de vis‹o na posicao PosicaoDoCampoDeVisao,
+//  Posiciona o campo de visao na posicao PosicaoDoCampoDeVisao,
 //  com a orientacao "AnguloDoCampoDeVisao".
-//  O tamanho do campo de vis‹o eh de 25% da largura da janela.
+//  O tamanho do campo de visao eh de 25% da largura da janela.
 // **********************************************************************
 void PosicionaTrianguloDoCampoDeVisao(float dimensao) {
     float tamanho = Tamanho.x * dimensao;
@@ -211,7 +183,7 @@ void PosicionaTrianguloDoCampoDeVisao(float dimensao) {
 }
 // **********************************************************************
 // void AvancaCampoDeVisao(float distancia)
-//  Move o campo de vis‹o "distancia" unidades pra frente ou pra tras.
+//  Move o campo de visao "distancia" unidades pra frente ou pra tras.
 // **********************************************************************
 void AvancaCampoDeVisao(float distancia) {
     Ponto vetor = Ponto(1, 0, 0);
@@ -221,7 +193,7 @@ void AvancaCampoDeVisao(float distancia) {
 // **********************************************************************
 //
 // **********************************************************************
-void posicionaEnvelope(Poligono* envelope) {
+void posicionaEnvelope(Poligono *envelope) {
     float esquerda, direita, cima, baixo;
     for (int i = 0; i < CampoDeVisao.getNVertices(); i++) {
         if (i == 0) {
@@ -264,14 +236,14 @@ void init() {
     // PontosDoCenario.LePoligono("PoligonoDeTeste.txt");
     GeraPontos(1000, Ponto(0, 0), Ponto(500, 500));
 
-    PontosDoCenario.obtemLimites(Min, Max);
-    Min.x--;
-    Min.y--;
-    Max.x++;
-    Max.y++;
+    PontosDoCenario.obtemLimites(Minimo, Maximo);
+    Minimo.x--;
+    Minimo.y--;
+    Maximo.x++;
+    Maximo.y++;
 
-    Meio = (Max + Min) * 0.5;  // Ponto central da janela
-    Tamanho = (Max - Min);     // Tamanho da janela em X,Y
+    Meio = (Maximo + Minimo) * 0.5;  // Ponto central da janela
+    Tamanho = (Maximo - Minimo);     // Tamanho da janela em X,Y
 
     // Ajusta variaveis do triangulo que representa o campo de visao
     PosicaoDoCampoDeVisao = Meio;
@@ -296,7 +268,7 @@ void animate() {
     TempoTotal += dt;
     nFrames++;
 
-    if (AccumDeltaT > 1.0 / 30)  // fixa a atualiza ‹o da tela em 30
+    if (AccumDeltaT > 1.0 / 30)  // fixa a atualizacao da tela em 30
     {
         AccumDeltaT = 0;
         glutPostRedisplay();
@@ -320,7 +292,7 @@ void reshape(int w, int h) {
     // Define a area a ser ocupada pela area OpenGL dentro da Janela
     glViewport(0, 0, w, h);
     // Define os limites logicos da area OpenGL dentro da Janela
-    glOrtho(Min.x, Max.x, Min.y, Max.y, 0, 1);
+    glOrtho(Minimo.x, Maximo.x, Minimo.y, Maximo.y, 0, 1);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -331,11 +303,11 @@ void reshape(int w, int h) {
 void DesenhaEixos() {
     glBegin(GL_LINES);
     //  eixo horizontal
-    glVertex2f(Min.x, Meio.y);
-    glVertex2f(Max.x, Meio.y);
+    glVertex2f(Minimo.x, Meio.y);
+    glVertex2f(Maximo.x, Meio.y);
     //  eixo vertical
-    glVertex2f(Meio.x, Min.y);
-    glVertex2f(Meio.x, Max.y);
+    glVertex2f(Meio.x, Minimo.y);
+    glVertex2f(Meio.x, Maximo.y);
     glEnd();
 }
 
@@ -397,7 +369,7 @@ void calculaEnvelope() {
             ponto.y <= Envelope.getVertice(3).y) {
             if (!forcaBruta(ponto)) {
                 pontosFalsos++;
-                pintaPonto(ponto, Yellow);
+                pintaPonto(ponto, DarkYellow);
             }
         }
     }
@@ -450,15 +422,13 @@ void display(void) {
         FoiClicado = false;
     }
 
-    cout << "Numero de pontos dentro do triangulo: " << pontosInternos << endl;
+    /*cout << "Numero de pontos dentro do triangulo: " << pontosInternos << endl;
     if (bool_Envelope) {
         cout << "Numero de pontos dentro do envelope: " << pontosFalsos << endl;
     }
     cout << "Numero de pontos fora do triangulo: "
-         << PontosDoCenario.getNVertices() - (pontosInternos + pontosFalsos)
-         << endl;
-    cout << "\n\n\n\n\n\n"
-         << endl;
+         << PontosDoCenario.getNVertices() - (pontosInternos + pontosFalsos) << endl;
+    cout << "\n\n\n\n\n\n" << endl;*/
 
     // Limpa a contagem de pontos
     pontosInternos = 0;
@@ -511,7 +481,7 @@ void keyboard(unsigned char key, int x, int y) {
                 bool_Envelope = false;
                 bool_forcaBruta = false;
                 bool_Quadtree = true;
-                criaArvore(raiz, 10, 10);
+                criaQuadTree(raiz, Ponto(0, 0), Ponto(500, 500));
             }
             break;
         case 'm':

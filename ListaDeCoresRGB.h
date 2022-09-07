@@ -122,7 +122,8 @@ enum {
     Very_Light_Purple,
     Yellow,
     Green,
-    Black
+    Black,
+    DarkYellow
 };
 
 
