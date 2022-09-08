@@ -39,7 +39,7 @@ double AccumDeltaT = 0;
 
 // Variaveis que controlam o triangulo do campo de visao
 Poligono PontosDoCenario, CampoDeVisao, TrianguloBase, Envelope;
-int pontosInternos, pontosFalsos;
+size_t pontosInternos, pontosFalsos, maxPontosNodo = 50;
 float AnguloDoCampoDeVisao = 0.0;
 float DimensaoDoCampoDeVisao = 0.25;
 
@@ -56,18 +56,17 @@ bool bool_Envelope = false;
 bool bool_Quadtree = false;
 
 typedef struct nodo_quadtree {
-    Ponto Min, Max;                // Limites do nodo 
-    bool cheia;                    // Se o nodo estiver cheio, ele nao pode ser dividido 
-    struct nodo_quadtree *filho[4];// 4 nodos-filhos
-    Ponto *pontos;                 // pontos dentro do nodo
-    int qtd_pontos;                // quantidade de pontos dentro do nodo
+    Ponto Min, Max;                  // Limites do nodo
+    bool cheio;                      // Se o nodo estiver cheio, ele nao pode ser dividido
+    struct nodo_quadtree *filho[4];  // 4 nodos-filhos
+    Ponto *pontos;                   // pontos dentro do nodo
+    int qtd_pontos;                  // quantidade de pontos dentro do nodo
 
 } QUADTREE;
 
-vector<QUADTREE> tree;  // raiz da quadtree
+QUADTREE *tree;
 
-void subdivide(QUADTREE *nodo, Ponto min, Ponto max);
-void DesenhaLinha(Ponto P1, Ponto P2);
+int calculaEnvelope(Ponto min, Ponto max);
 // **********************************************************************
 // GeraPontos(int qtd, Ponto Min, Ponto Max)
 //      Metodo que gera pontos aleatorios no intervalo [Min..Max]
@@ -129,50 +128,55 @@ void subdivide(QUADTREE *nodo, Ponto min, Ponto max) {
     float meioY = (nodo->Min.y + nodo->Max.y) / 2;
 
     // filho direita em cima
+    nodo->filho[0] = new nodo_quadtree;
     nodo->filho[0]->Min.x = meioX;
     nodo->filho[0]->Min.y = meioY;
     nodo->filho[0]->Max = nodo->Max;
 
     // filho esquerda em cima
+    nodo->filho[1] = new nodo_quadtree;
     nodo->filho[1]->Min.x = nodo->Min.x;
     nodo->filho[1]->Min.y = meioY;
     nodo->filho[1]->Max.x = meioX;
     nodo->filho[1]->Max.y = nodo->Max.y;
 
     // filho esquerda em baixo
+    nodo->filho[2] = new nodo_quadtree;
     nodo->filho[2]->Min = nodo->Min;
     nodo->filho[2]->Max.x = meioX;
     nodo->filho[2]->Max.y = meioY;
 
     // filho direita em baixo
+    nodo->filho[3] = new nodo_quadtree;
     nodo->filho[3]->Min.x = meioX;
     nodo->filho[3]->Min.y = nodo->Min.y;
     nodo->filho[3]->Max.x = nodo->Max.x;
     nodo->filho[3]->Max.y = meioY;
 }
 
-void criaQuadTree(QUADTREE *nodo, Ponto min, Ponto max) {
-    nodo->Min = min;
-    nodo->Max = max;
-    nodo->cheia = false; 
-    nodo->qtd_pontos = 0; //alterar
-    nodo->pontos = NULL;  //alterar
+void criaQuadTree(nodo_quadtree nodo, Ponto min, Ponto max) {
+    nodo.Min = min;
+    nodo.Max = max;
+    nodo.qtd_pontos = calculaEnvelope(nodo.Min, nodo.Max);
+    //cout << "qtd_pontos: " << nodo.qtd_pontos << endl;
+    nodo.cheio = nodo.qtd_pontos > maxPontosNodo ? true : false;
+    nodo.pontos = NULL;  // alterar
 
-    for (int i = 0; i < 4; i++) {
-        nodo->filho[i] = (QUADTREE *)malloc(sizeof(QUADTREE));
+    if (nodo.cheio) {
+        subdivide(&nodo, min, max);
+        for (int i = 0; i < 4; i++) {
+            criaQuadTree(*nodo.filho[i], nodo.filho[i]->Min, nodo.filho[i]->Max);
+        }
     }
-
-    subdivide(nodo, min, max);
 }
 
 void inicializaQuadTree() {
-    QUADTREE raiz;
-    criaQuadTree(&raiz, Minimo, Maximo);
-    tree.push_back(raiz);
+    tree = new QUADTREE;
+    criaQuadTree(*tree, Minimo, Maximo);
 }
 
 // **********************************************************************
-// void PosicionaTrianguloDoCampoDeVisao()
+// void PosicionaTrianguloDoCampoDeVisao(float dimensao)
 //  Posiciona o campo de visao na posicao PosicaoDoCampoDeVisao,
 //  com a orientacao "AnguloDoCampoDeVisao".
 //  O tamanho do campo de visao eh de 25% da largura da janela.
@@ -326,18 +330,20 @@ void DesenhaLinha(Ponto P1, Ponto P2) {
 }
 
 void DesenhaQuadTree() {
-    for (QUADTREE nodo : tree) {
-        // define o centro do nodo
-        float meioX = (nodo.Min.x + nodo.Max.x) / 2;
-        float meioY = (nodo.Min.y + nodo.Max.y) / 2;
+    QUADTREE *nodo = tree;
+    while (nodo->qtd_pontos >= 0) {
+        // origem do nodo
+        float meioX = (nodo->Min.x + nodo->Max.x) / 2;
+        float meioY = (nodo->Min.y + nodo->Max.y) / 2;
         glBegin(GL_LINES);
         //  eixo horizontal do nodo
-        glVertex2f(nodo.Min.x, meioY);
-        glVertex2f(nodo.Max.x, meioY);
+        glVertex2f(nodo->Min.x, meioY);
+        glVertex2f(nodo->Max.x, meioY);
         //  eixo vertical do nodo
-        glVertex2f(meioX, nodo.Min.y);
-        glVertex2f(meioX, nodo.Max.y);
+        glVertex2f(meioX, nodo->Min.y);
+        glVertex2f(meioX, nodo->Max.y);
         glEnd();
+        nodo++;
     }
 }
 
@@ -356,7 +362,7 @@ void pintaPonto(Ponto ponto, int cor) {
 }
 // **********************************************************************
 //  bool forcaBruta(Ponto ponto)
-//  Executa o algoritmo de forca bruta
+//  Executa o algoritmo de forca bruta para um ponto
 //
 // **********************************************************************
 bool forcaBruta(Ponto ponto) {
@@ -379,11 +385,12 @@ bool forcaBruta(Ponto ponto) {
     return false;
 }
 // **********************************************************************
-// void calculaEnvelope(Ponto min, Ponto max)
-// verifica se os pontos estão dentro do envelope
+// int calculaEnvelope(Ponto min, Ponto max)
+// verifica se os pontos estão dentro de um envelope
 //
 // **********************************************************************
-void calculaEnvelope(Ponto min, Ponto max) {
+int calculaEnvelope(Ponto min, Ponto max) {
+    int pontos = 0;
     for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
         Ponto ponto = PontosDoCenario.getVertice(i);
 
@@ -392,11 +399,13 @@ void calculaEnvelope(Ponto min, Ponto max) {
             ponto.y >= min.y &&
             ponto.y <= max.y) {
             if (!forcaBruta(ponto)) {
+                pontos++;
                 pontosFalsos++;
                 pintaPonto(ponto, DarkYellow);
             }
         }
     }
+    return pontos;
 }
 // **********************************************************************
 //  void display( void )
