@@ -56,15 +56,15 @@ bool bool_Envelope = false;
 bool bool_Quadtree = false;
 
 typedef struct nodo_quadtree {
-    Ponto Min, Max;                /* Limites do nodo */
-    bool cheia;                    /* Se o nodo estiver cheio, ele nao pode ser dividido */
-    struct nodo_quadtree *filho[4]; /* 4 nodos-filhos*/
+    Ponto Min, Max;                // Limites do nodo 
+    bool cheia;                    // Se o nodo estiver cheio, ele nao pode ser dividido 
+    struct nodo_quadtree *filho[4];// 4 nodos-filhos
     Ponto *pontos;                 // pontos dentro do nodo
     int qtd_pontos;                // quantidade de pontos dentro do nodo
 
 } QUADTREE;
 
-QUADTREE *raiz;  // raiz da quadtree
+vector<QUADTREE> tree;  // raiz da quadtree
 
 void subdivide(QUADTREE *nodo, Ponto min, Ponto max);
 void DesenhaLinha(Ponto P1, Ponto P2);
@@ -154,15 +154,21 @@ void subdivide(QUADTREE *nodo, Ponto min, Ponto max) {
 void criaQuadTree(QUADTREE *nodo, Ponto min, Ponto max) {
     nodo->Min = min;
     nodo->Max = max;
-    nodo->cheia = false;
-    nodo->qtd_pontos = 0;
-    nodo->pontos = NULL;
+    nodo->cheia = false; 
+    nodo->qtd_pontos = 0; //alterar
+    nodo->pontos = NULL;  //alterar
 
     for (int i = 0; i < 4; i++) {
         nodo->filho[i] = (QUADTREE *)malloc(sizeof(QUADTREE));
     }
 
     subdivide(nodo, min, max);
+}
+
+void inicializaQuadTree() {
+    QUADTREE raiz;
+    criaQuadTree(&raiz, Minimo, Maximo);
+    tree.push_back(raiz);
 }
 
 // **********************************************************************
@@ -193,7 +199,7 @@ void AvancaCampoDeVisao(float distancia) {
 // **********************************************************************
 //
 // **********************************************************************
-void posicionaEnvelope(Poligono *envelope) {
+void PosicionaEnvelope(Poligono *envelope) {
     float esquerda, direita, cima, baixo;
     for (int i = 0; i < CampoDeVisao.getNVertices(); i++) {
         if (i == 0) {
@@ -253,7 +259,8 @@ void init() {
     CriaTrianguloDoCampoDeVisao();
     CriaEnvelope();
     PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao);
-    posicionaEnvelope(&Envelope);
+    PosicionaEnvelope(&Envelope);
+    inicializaQuadTree();
 }
 
 double nFrames = 0;
@@ -317,6 +324,23 @@ void DesenhaLinha(Ponto P1, Ponto P2) {
     glVertex3f(P2.x, P2.y, P2.z);
     glEnd();
 }
+
+void DesenhaQuadTree() {
+    for (QUADTREE nodo : tree) {
+        // define o centro do nodo
+        float meioX = (nodo.Min.x + nodo.Max.x) / 2;
+        float meioY = (nodo.Min.y + nodo.Max.y) / 2;
+        glBegin(GL_LINES);
+        //  eixo horizontal do nodo
+        glVertex2f(nodo.Min.x, meioY);
+        glVertex2f(nodo.Max.x, meioY);
+        //  eixo vertical do nodo
+        glVertex2f(meioX, nodo.Min.y);
+        glVertex2f(meioX, nodo.Max.y);
+        glEnd();
+    }
+}
+
 // **********************************************************************
 // void pintaPonto(Poligono pontos, int cor)
 // pinta um ponto com uma cor indicada
@@ -331,7 +355,7 @@ void pintaPonto(Ponto ponto, int cor) {
     glEnd();
 }
 // **********************************************************************
-//  void forcaBruta(Ponto ponto)
+//  bool forcaBruta(Ponto ponto)
 //  Executa o algoritmo de forca bruta
 //
 // **********************************************************************
@@ -355,18 +379,18 @@ bool forcaBruta(Ponto ponto) {
     return false;
 }
 // **********************************************************************
-// void calculaEnvelope()
+// void calculaEnvelope(Ponto min, Ponto max)
 // verifica se os pontos estão dentro do envelope
 //
 // **********************************************************************
-void calculaEnvelope() {
+void calculaEnvelope(Ponto min, Ponto max) {
     for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
         Ponto ponto = PontosDoCenario.getVertice(i);
 
-        if (ponto.x >= Envelope.getVertice(0).x &&
-            ponto.x <= Envelope.getVertice(2).x &&
-            ponto.y >= Envelope.getVertice(1).y &&
-            ponto.y <= Envelope.getVertice(3).y) {
+        if (ponto.x >= min.x &&
+            ponto.x <= max.x &&
+            ponto.y >= min.y &&
+            ponto.y <= max.y) {
             if (!forcaBruta(ponto)) {
                 pontosFalsos++;
                 pintaPonto(ponto, DarkYellow);
@@ -410,7 +434,13 @@ void display(void) {
         glLineWidth(3);
         glColor3f(0, 0, 0);
         Envelope.desenhaPoligono();
-        calculaEnvelope();
+        calculaEnvelope(Envelope.getVertice(0), Envelope.getVertice(2));
+    }
+
+    if (bool_Quadtree) {
+        glLineWidth(2);
+        glColor3f(0, 0, 0);
+        DesenhaQuadTree();
     }
 
     glLineWidth(3);
@@ -466,7 +496,7 @@ void keyboard(unsigned char key, int x, int y) {
                 bool_forcaBruta = false;
                 bool_Envelope = true;
                 bool_Quadtree = false;
-                posicionaEnvelope(&Envelope);
+                PosicionaEnvelope(&Envelope);
             }
             break;
         case 'f':
@@ -481,14 +511,13 @@ void keyboard(unsigned char key, int x, int y) {
                 bool_Envelope = false;
                 bool_forcaBruta = false;
                 bool_Quadtree = true;
-                criaQuadTree(raiz, Ponto(0, 0), Ponto(500, 500));
             }
             break;
         case 'm':
             if (DimensaoDoCampoDeVisao < 0.75) {
                 PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao += 0.05);
                 if (bool_Envelope) {
-                    posicionaEnvelope(&Envelope);
+                    PosicionaEnvelope(&Envelope);
                 }
             }
             break;
@@ -496,7 +525,7 @@ void keyboard(unsigned char key, int x, int y) {
             if (DimensaoDoCampoDeVisao > 0.1) {
                 PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao -= 0.05);
                 if (bool_Envelope) {
-                    posicionaEnvelope(&Envelope);
+                    PosicionaEnvelope(&Envelope);
                 }
             }
             break;
@@ -535,7 +564,7 @@ void arrow_keys(int a_keys, int x, int y) {
             break;
     }
     PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao);
-    posicionaEnvelope(&Envelope);
+    PosicionaEnvelope(&Envelope);
     glutPostRedisplay();
 }
 // **********************************************************************
