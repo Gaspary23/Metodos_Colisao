@@ -331,10 +331,6 @@ void DesenhaLinha(Ponto P1, Ponto P2) {
 
 void DesenhaQuadTree(nodo_quadtree *nodo, int controle) {
     Poligono envelope = Poligono();
-    envelope.insereVertice(Ponto(nodo->Max.x, nodo->Min.y));
-    envelope.insereVertice(Ponto(nodo->Max.x, nodo->Max.y));
-    envelope.insereVertice(Ponto(nodo->Min.x, nodo->Max.y));
-    envelope.insereVertice(Ponto(nodo->Min.x, nodo->Min.y));
 
     glLineWidth(1);
     switch (controle) {
@@ -343,15 +339,15 @@ void DesenhaQuadTree(nodo_quadtree *nodo, int controle) {
             controle = 1;
             break;
         case 1:
-            glColor3f(0.99, 0.67, 0.43);  // Laranja
+            glColor3f(0.53, 0.82, 0.87); // Rosa
             controle = 2;
             break;
         case 2:
-            glColor3f(0.53, 0.12, 0.47); // Rosa
+            glColor3f(0.99, 0.67, 0.43);  // Laranja
             controle = 3;
             break;
         case 3:
-            glColor3f(1, 0, 1);  // Roxo
+            glColor3f(1, 0, 1);  // Rosa
             controle = 0;
             break;
     }
@@ -360,16 +356,14 @@ void DesenhaQuadTree(nodo_quadtree *nodo, int controle) {
     float meioX = (nodo->Min.x + nodo->Max.x) / 2;
     float meioY = (nodo->Min.y + nodo->Max.y) / 2;
 
-    /*glBegin(GL_LINES);
+    glBegin(GL_LINES);
     //  eixo horizontal
     glVertex2f(nodo->Min.x, meioY);
     glVertex2f(nodo->Max.x, meioY);
     //  eixo vertical
     glVertex2f(meioX, nodo->Min.y);
     glVertex2f(meioX, nodo->Max.y);
-    glEnd();*/
-
-    envelope.desenhaPoligono();
+    glEnd();
 
     if (nodo->cheio) {
         DesenhaQuadTree(nodo->filho[0], controle);
