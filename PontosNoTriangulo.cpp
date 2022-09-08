@@ -39,7 +39,7 @@ double AccumDeltaT = 0;
 
 // Variaveis que controlam o triangulo do campo de visao
 Poligono PontosDoCenario, CampoDeVisao, TrianguloBase, Envelope;
-size_t pontosInternos, pontosFalsos, maxPontosNodo = 50;
+size_t pontosInternos, pontosFalsos, maxPontosNodo = 20;
 float AnguloDoCampoDeVisao = 0.0;
 float DimensaoDoCampoDeVisao = 0.25;
 
@@ -154,25 +154,25 @@ void subdivide(QUADTREE *nodo, Ponto min, Ponto max) {
     nodo->filho[3]->Max.y = meioY;
 }
 
-void criaQuadTree(nodo_quadtree nodo, Ponto min, Ponto max) {
-    nodo.Min = min;
-    nodo.Max = max;
-    nodo.qtd_pontos = calculaEnvelope(nodo.Min, nodo.Max);
-    //cout << "qtd_pontos: " << nodo.qtd_pontos << endl;
-    nodo.cheio = nodo.qtd_pontos > maxPontosNodo ? true : false;
-    nodo.pontos = NULL;  // alterar
+void criaQuadTree(nodo_quadtree *nodo, Ponto min, Ponto max) {
+    nodo->Min = min;
+    nodo->Max = max;
+    nodo->qtd_pontos = calculaEnvelope(nodo->Min, nodo->Max);
+    nodo->cheio = nodo->qtd_pontos > maxPontosNodo ? true : false;
 
-    if (nodo.cheio) {
-        subdivide(&nodo, min, max);
+    nodo->pontos = NULL;  // alterar
+
+    if (nodo->cheio) {
+        subdivide(nodo, min, max);
         for (int i = 0; i < 4; i++) {
-            criaQuadTree(*nodo.filho[i], nodo.filho[i]->Min, nodo.filho[i]->Max);
+            criaQuadTree(nodo->filho[i], nodo->filho[i]->Min, nodo->filho[i]->Max);
         }
     }
 }
 
 void inicializaQuadTree() {
     tree = new QUADTREE;
-    criaQuadTree(*tree, Minimo, Maximo);
+    criaQuadTree(tree, Minimo, Maximo);
 }
 
 // **********************************************************************
@@ -329,21 +329,53 @@ void DesenhaLinha(Ponto P1, Ponto P2) {
     glEnd();
 }
 
-void DesenhaQuadTree() {
-    QUADTREE *nodo = tree;
-    while (nodo->qtd_pontos >= 0) {
-        // origem do nodo
-        float meioX = (nodo->Min.x + nodo->Max.x) / 2;
-        float meioY = (nodo->Min.y + nodo->Max.y) / 2;
-        glBegin(GL_LINES);
-        //  eixo horizontal do nodo
-        glVertex2f(nodo->Min.x, meioY);
-        glVertex2f(nodo->Max.x, meioY);
-        //  eixo vertical do nodo
-        glVertex2f(meioX, nodo->Min.y);
-        glVertex2f(meioX, nodo->Max.y);
-        glEnd();
-        nodo++;
+void DesenhaQuadTree(nodo_quadtree *nodo, int controle) {
+    Poligono envelope = Poligono();
+    envelope.insereVertice(Ponto(nodo->Max.x, nodo->Min.y));
+    envelope.insereVertice(Ponto(nodo->Max.x, nodo->Max.y));
+    envelope.insereVertice(Ponto(nodo->Min.x, nodo->Max.y));
+    envelope.insereVertice(Ponto(nodo->Min.x, nodo->Min.y));
+
+    glLineWidth(1);
+    switch (controle) {
+        case 0:
+            glColor3f(0, 0, 1);  // Azul
+            controle = 1;
+            break;
+        case 1:
+            glColor3f(0.99, 0.67, 0.43);  // Laranja
+            controle = 2;
+            break;
+        case 2:
+            glColor3f(0.53, 0.12, 0.47); // Rosa
+            controle = 3;
+            break;
+        case 3:
+            glColor3f(1, 0, 1);  // Roxo
+            controle = 0;
+            break;
+    }
+
+    // define o centro do nodo
+    float meioX = (nodo->Min.x + nodo->Max.x) / 2;
+    float meioY = (nodo->Min.y + nodo->Max.y) / 2;
+
+    /*glBegin(GL_LINES);
+    //  eixo horizontal
+    glVertex2f(nodo->Min.x, meioY);
+    glVertex2f(nodo->Max.x, meioY);
+    //  eixo vertical
+    glVertex2f(meioX, nodo->Min.y);
+    glVertex2f(meioX, nodo->Max.y);
+    glEnd();*/
+
+    envelope.desenhaPoligono();
+
+    if (nodo->cheio) {
+        DesenhaQuadTree(nodo->filho[0], controle);
+        DesenhaQuadTree(nodo->filho[1], controle);
+        DesenhaQuadTree(nodo->filho[2], controle);
+        DesenhaQuadTree(nodo->filho[3], controle);
     }
 }
 
@@ -389,7 +421,7 @@ bool forcaBruta(Ponto ponto) {
 // verifica se os pontos estão dentro de um envelope
 //
 // **********************************************************************
-int calculaEnvelope(Ponto min, Ponto max) {
+int calculaEnvelope(Ponto min, Ponto max) {  // Adicionar param Poligono pontos
     int pontos = 0;
     for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
         Ponto ponto = PontosDoCenario.getVertice(i);
@@ -399,10 +431,10 @@ int calculaEnvelope(Ponto min, Ponto max) {
             ponto.y >= min.y &&
             ponto.y <= max.y) {
             if (!forcaBruta(ponto)) {
-                pontos++;
                 pontosFalsos++;
                 pintaPonto(ponto, DarkYellow);
             }
+            pontos++;
         }
     }
     return pontos;
@@ -449,7 +481,7 @@ void display(void) {
     if (bool_Quadtree) {
         glLineWidth(2);
         glColor3f(0, 0, 0);
-        DesenhaQuadTree();
+        DesenhaQuadTree(tree, 0);
     }
 
     glLineWidth(3);
