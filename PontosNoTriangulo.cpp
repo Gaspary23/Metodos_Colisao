@@ -171,10 +171,33 @@ void criaQuadTree(nodo_quadtree *nodo, Ponto min, Ponto max) {
     }
 }
 
+bool colisaoQuadTree (nodo, tlMin, tlMax){
+if (tlMin.x <= nodo.Max.x){
+ if (tlMax.x >= nodo.Min.x){
+  if (tlMin.y <= nodo.Max.y){
+   if (tlMax.y <= nodo.Min.y){
+    return true;
+   }
+ }
+}
+}
+
 void inicializaQuadTree() {
     tree = new QUADTREE;
     criaQuadTree(tree, Minimo, Maximo);
 }
+
+calculaQuadTree(nodo_quadtree *nodo, tlMin, tlMax){
+    if (colisaoQuadTree(*nodo,tlMin, tlMax)){
+    if (*nodo->cheio){
+    for nodo *filho{
+     calculaQuadTree ((nodo_quadtree *filho, tlMin, tlMax)
+     }
+    }
+    // Implementar aqui forca bruta do envelope( mas com a lista de pontos reduzida graças aos filtros)
+    }
+}
+
 
 // **********************************************************************
 // void PosicionaTrianguloDoCampoDeVisao(float dimensao)
@@ -573,7 +596,7 @@ void keyboard(unsigned char key, int x, int y) {
                 bool_Envelope = false;
                 bool_forcaBruta = false;
                 bool_Quadtree = true;
-                PosicionaEnvelope(&Envelope);
+                calculaQuadTree(&Envelope);
             }
             break;
         case 'm':  // Aumenta o tamanho do campo de visao
