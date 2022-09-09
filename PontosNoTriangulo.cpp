@@ -60,14 +60,15 @@ typedef struct nodo_quadtree {
     Ponto Min, Max;                  // Limites do nodo
     bool cheio;                      // Se o nodo estiver cheio, ele nao pode ser dividido
     struct nodo_quadtree *filho[4];  // 4 nodos-filhos
-    Ponto *pontos;                   // pontos dentro do nodo
+    Poligono pontos;                 // pontos dentro do nodo
     int qtd_pontos;                  // quantidade de pontos dentro do nodo
 
 } QUADTREE;
 
 QUADTREE *tree;
 
-int calculaEnvelope(Ponto min, Ponto max);
+void calculaEnvelope(Ponto min, Ponto max);
+void calculaEnvelope(Poligono *pontos, Ponto min, Ponto max);
 // **********************************************************************
 // GeraPontos(int qtd, Ponto Min, Ponto Max)
 //      Metodo que gera pontos aleatorios no intervalo [Min..Max]
@@ -158,10 +159,9 @@ void subdivide(QUADTREE *nodo, Ponto min, Ponto max) {
 void criaQuadTree(nodo_quadtree *nodo, Ponto min, Ponto max) {
     nodo->Min = min;
     nodo->Max = max;
-    nodo->qtd_pontos = calculaEnvelope(nodo->Min, nodo->Max);
+    calculaEnvelope(&(nodo->pontos), nodo->Min, nodo->Max);
+    nodo->qtd_pontos = nodo->pontos.getNVertices();
     nodo->cheio = nodo->qtd_pontos > maxPontosNodo ? true : false;
-
-    nodo->pontos = NULL;  // alterar
 
     if (nodo->cheio) {
         subdivide(nodo, min, max);
@@ -412,12 +412,12 @@ bool forcaBruta(Ponto ponto) {
     return false;
 }
 // **********************************************************************
-// int calculaEnvelope(Ponto min, Ponto max)
+// void calculaEnvelope(Ponto min, Ponto max)
+// void calculaEnvelope(Poligono *pontos, Ponto min, Ponto max)
 // verifica se os pontos estão dentro de um envelope
 //
 // **********************************************************************
-int calculaEnvelope(Ponto min, Ponto max) {  // Adicionar param Poligono pontos
-    int pontos = 0;
+void calculaEnvelope(Ponto min, Ponto max) {
     for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
         Ponto ponto = PontosDoCenario.getVertice(i);
 
@@ -429,10 +429,20 @@ int calculaEnvelope(Ponto min, Ponto max) {  // Adicionar param Poligono pontos
                 pontosFalsos++;
                 pintaPonto(ponto, DarkYellow);
             }
-            pontos++;
         }
     }
-    return pontos;
+}
+void calculaEnvelope(Poligono *pontos, Ponto min, Ponto max) {
+    for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
+        Ponto ponto = PontosDoCenario.getVertice(i);
+
+        if (ponto.x >= min.x &&
+            ponto.x <= max.x &&
+            ponto.y >= min.y &&
+            ponto.y <= max.y) {
+            pontos->insereVertice(ponto);
+        }
+    }
 }
 // **********************************************************************
 //  void display( void )
@@ -495,7 +505,8 @@ void display(void) {
     }
     cout << "Numero de pontos fora do triangulo: "
          << PontosDoCenario.getNVertices() - (pontosInternos + pontosFalsos) << endl;
-    cout << "\n\n\n\n\n\n" << endl;
+    cout << "\n\n\n\n\n\n"
+         << endl;
 
     // Limpa a contagem de pontos
     pontosInternos = 0;
