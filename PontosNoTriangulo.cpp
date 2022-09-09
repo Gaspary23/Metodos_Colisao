@@ -339,15 +339,15 @@ void DesenhaQuadTree(nodo_quadtree *nodo, int controle) {
             controle = 1;
             break;
         case 1:
-            glColor3f(0.53, 0.82, 0.87); // Rosa
+            glColor3f(1, 0, 1);  // Rosa
             controle = 2;
             break;
         case 2:
-            glColor3f(0.99, 0.67, 0.43);  // Laranja
+            glColor3f(0.99, 0.87, 0.43);  // Laranja
             controle = 3;
             break;
         case 3:
-            glColor3f(1, 0, 1);  // Rosa
+            glColor3f(0.53, 0.82, 0.97); // Ciano
             controle = 0;
             break;
     }
@@ -543,7 +543,7 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case 'q':
             if (bool_Envelope || bool_forcaBruta) {
-                bool_Envelope = false;
+                bool_Envelope = true;
                 bool_forcaBruta = false;
                 bool_Quadtree = true;
             }
