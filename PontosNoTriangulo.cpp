@@ -46,6 +46,7 @@ float DimensaoDoCampoDeVisao = 0.25;
 // Limites logicos da area de desenho
 Ponto Minimo, Maximo, Tamanho, Meio;
 Ponto PosicaoDoCampoDeVisao, PontoClicado;
+unsigned long int QTD_PONTOS = 1000;
 
 bool desenhaEixos = true;
 bool FoiClicado = false;
@@ -244,7 +245,7 @@ void init() {
     // da janela.Ponto ponto : PontosDoCenario.getNVertices()
 
     // PontosDoCenario.LePoligono("PoligonoDeTeste.txt");
-    GeraPontos(1000, Ponto(0, 0), Ponto(500, 500));
+    GeraPontos(QTD_PONTOS, Ponto(0, 0), Ponto(500, 500));
 
     PontosDoCenario.obtemLimites(Minimo, Maximo);
     Minimo.x--;
@@ -347,7 +348,7 @@ void DesenhaQuadTree(nodo_quadtree *nodo, int controle) {
             controle = 3;
             break;
         case 3:
-            glColor3f(0.53, 0.82, 0.97); // Ciano
+            glColor3f(0.53, 0.82, 0.97);  // Ciano
             controle = 0;
             break;
     }
@@ -473,8 +474,9 @@ void display(void) {
     }
 
     if (bool_Quadtree) {
-        glLineWidth(2);
+        glLineWidth(3);
         glColor3f(0, 0, 0);
+        Envelope.desenhaPoligono();
         DesenhaQuadTree(tree, 0);
     }
 
@@ -487,13 +489,13 @@ void display(void) {
         FoiClicado = false;
     }
 
-    /*cout << "Numero de pontos dentro do triangulo: " << pontosInternos << endl;
+    cout << "Numero de pontos dentro do triangulo: " << pontosInternos << endl;
     if (bool_Envelope) {
         cout << "Numero de pontos dentro do envelope: " << pontosFalsos << endl;
     }
     cout << "Numero de pontos fora do triangulo: "
          << PontosDoCenario.getNVertices() - (pontosInternos + pontosFalsos) << endl;
-    cout << "\n\n\n\n\n\n" << endl;*/
+    cout << "\n\n\n\n\n\n" << endl;
 
     // Limpa a contagem de pontos
     pontosInternos = 0;
@@ -525,8 +527,22 @@ void ContaTempo(double tempo) {
 //
 // **********************************************************************
 void keyboard(unsigned char key, int x, int y) {
+    bool teste = false;
+    size_t aux;
     switch (key) {
-        case 'e':
+        case 'a':  // Altera o numero maximo de pontos
+                   // nos nodos da quadtree
+            while (!teste) {
+                cout << "\nDigite o numero maximo de pontos"
+                     << " para cada nodo da quadtree: " << endl;
+                cin >> aux;
+                if (aux > 0 && aux < QTD_PONTOS)
+                    teste = true;
+            }
+            maxPontosNodo = aux;
+            inicializaQuadTree();
+            break;
+        case 'e':  // Ativa o algoritmo de envelope
             if (bool_forcaBruta || bool_Quadtree) {
                 bool_forcaBruta = false;
                 bool_Envelope = true;
@@ -534,34 +550,33 @@ void keyboard(unsigned char key, int x, int y) {
                 PosicionaEnvelope(&Envelope);
             }
             break;
-        case 'f':
+        case 'f':  // Ativa o algoritmo de forca bruta
             if (bool_Envelope || bool_Quadtree) {
                 bool_Envelope = false;
                 bool_forcaBruta = true;
                 bool_Quadtree = false;
             }
             break;
-        case 'q':
+        case 'q':  // Ativa o algoritmo de quadtree
             if (bool_Envelope || bool_forcaBruta) {
-                bool_Envelope = true;
+                bool_Envelope = false;
                 bool_forcaBruta = false;
                 bool_Quadtree = true;
+                PosicionaEnvelope(&Envelope);
             }
             break;
-        case 'm':
+        case 'm':  // Aumenta o tamanho do campo de visao
             if (DimensaoDoCampoDeVisao < 0.75) {
                 PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao += 0.05);
-                if (bool_Envelope) {
+                if (bool_Envelope || bool_Quadtree)
                     PosicionaEnvelope(&Envelope);
-                }
             }
             break;
-        case 'n':
+        case 'n':  // Diminui o tamanho do campo de visao
             if (DimensaoDoCampoDeVisao > 0.1) {
                 PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao -= 0.05);
-                if (bool_Envelope) {
+                if (bool_Envelope || bool_Quadtree)
                     PosicionaEnvelope(&Envelope);
-                }
             }
             break;
         case 't':
@@ -598,8 +613,8 @@ void arrow_keys(int a_keys, int x, int y) {
         default:
             break;
     }
-    PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao);
-    PosicionaEnvelope(&Envelope);
+    PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao);  // Atualiza posicao do campo de visao
+    PosicionaEnvelope(&Envelope);                              // Atualiza posicao do envelope
     glutPostRedisplay();
 }
 // **********************************************************************
