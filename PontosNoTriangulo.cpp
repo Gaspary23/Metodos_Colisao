@@ -54,7 +54,8 @@ bool FoiClicado = false;
 // Variaveis que controlam as propriedades do algoritmo de forca bruta --add
 bool bool_forcaBruta = true;
 bool bool_Envelope = false;
-bool bool_Quadtree = false;
+bool bool_QuadTree = false;
+bool pinta_QuadTree = false;
 
 typedef struct nodo_quadtree {
     Ponto Min, Max;                  // Limites do nodo
@@ -244,7 +245,7 @@ void init() {
     // Note que o "aspect ratio" dos pontos deve ser o mesmo
     // da janela.Ponto ponto : PontosDoCenario.getNVertices()
 
-    // PontosDoCenario.LePoligono("PoligonoDeTeste.txt");
+    //PontosDoCenario.LePoligono("libTxts/PoligonoDeTeste.txt");
     GeraPontos(QTD_PONTOS, Ponto(0, 0), Ponto(500, 500));
 
     PontosDoCenario.obtemLimites(Minimo, Maximo);
@@ -330,24 +331,43 @@ void DesenhaLinha(Ponto P1, Ponto P2) {
     glEnd();
 }
 
-void DesenhaQuadTree(nodo_quadtree *nodo, int controle) {
+void DesenhaQuadTree(nodo_quadtree *nodo) {
     Poligono envelope = Poligono();
+    envelope.insereVertice(Ponto(nodo->Max.x, nodo->Min.y));
+    envelope.insereVertice(Ponto(nodo->Max.x, nodo->Max.y));
+    envelope.insereVertice(Ponto(nodo->Min.x, nodo->Max.y));
+    envelope.insereVertice(Ponto(nodo->Min.x, nodo->Min.y));
+    
+    envelope.desenhaPoligono();
 
+    if (nodo->cheio) {
+        DesenhaQuadTree(nodo->filho[0]);
+        DesenhaQuadTree(nodo->filho[1]);
+        DesenhaQuadTree(nodo->filho[2]);
+        DesenhaQuadTree(nodo->filho[3]);
+    }
+}
+
+void PintaQuadTree(nodo_quadtree *nodo, int controle) {
     glLineWidth(1);
     switch (controle) {
         case 0:
+            glLineWidth(2);
             glColor3f(0, 0, 1);  // Azul
             controle = 1;
             break;
         case 1:
+            glLineWidth(2);
             glColor3f(1, 0, 1);  // Rosa
             controle = 2;
             break;
         case 2:
+            glLineWidth(2);
             glColor3f(0.99, 0.87, 0.43);  // Laranja
             controle = 3;
             break;
         case 3:
+            glLineWidth(2);
             glColor3f(0.53, 0.82, 0.97);  // Ciano
             controle = 0;
             break;
@@ -358,19 +378,17 @@ void DesenhaQuadTree(nodo_quadtree *nodo, int controle) {
     float meioY = (nodo->Min.y + nodo->Max.y) / 2;
 
     glBegin(GL_LINES);
-    //  eixo horizontal
+    //  eixo horizontal que separa os nodos filhos
     glVertex2f(nodo->Min.x, meioY);
     glVertex2f(nodo->Max.x, meioY);
-    //  eixo vertical
+    //  eixo vertical que separa os nodos filhos
     glVertex2f(meioX, nodo->Min.y);
     glVertex2f(meioX, nodo->Max.y);
     glEnd();
 
-    if (nodo->cheio) {
-        DesenhaQuadTree(nodo->filho[0], controle);
-        DesenhaQuadTree(nodo->filho[1], controle);
-        DesenhaQuadTree(nodo->filho[2], controle);
-        DesenhaQuadTree(nodo->filho[3], controle);
+    for (int i = 0; i < 4; i++) {
+        if (nodo->filho[i]->cheio)
+            PintaQuadTree(nodo->filho[i], controle);
     }
 }
 
@@ -445,6 +463,21 @@ void calculaEnvelope(Poligono *pontos, Ponto min, Ponto max) {
     }
 }
 // **********************************************************************
+//  void calculaQuadTree(nodo_quadtree *nodo)
+//  verifica os pontos que estão dentro de nodos 
+//   que tem colisao com o envelope do triangulo
+// **********************************************************************
+void calculaQuadTree (nodo_quadtree *nodo, Ponto min, Ponto max) {
+    
+    
+    if (nodo->cheio) {
+        calculaQuadTree(nodo->filho[0], min, max);
+        calculaQuadTree(nodo->filho[1], min, max);
+        calculaQuadTree(nodo->filho[2], min, max);
+        calculaQuadTree(nodo->filho[3], min, max);
+    }
+}
+// **********************************************************************
 //  void display( void )
 //
 // **********************************************************************
@@ -476,18 +509,26 @@ void display(void) {
         }
     }
 
+    void (*funcao)(Ponto, Ponto) = calculaEnvelope;
     if (bool_Envelope) {
         glLineWidth(3);
         glColor3f(0, 0, 0);
         Envelope.desenhaPoligono();
+
         calculaEnvelope(Envelope.getVertice(0), Envelope.getVertice(2));
     }
 
-    if (bool_Quadtree) {
+    if (bool_QuadTree) {
         glLineWidth(3);
         glColor3f(0, 0, 0);
         Envelope.desenhaPoligono();
-        DesenhaQuadTree(tree, 0);
+        if(!pinta_QuadTree) {
+            glLineWidth(2);
+            glColor3f(0, 0, 0);
+            DesenhaQuadTree(tree);
+        } else {
+            PintaQuadTree(tree, 0);
+        }        
     }
 
     glLineWidth(3);
@@ -554,40 +595,45 @@ void keyboard(unsigned char key, int x, int y) {
             inicializaQuadTree();
             break;
         case 'e':  // Ativa o algoritmo de envelope
-            if (bool_forcaBruta || bool_Quadtree) {
+            if (bool_forcaBruta || bool_QuadTree) {
                 bool_forcaBruta = false;
                 bool_Envelope = true;
-                bool_Quadtree = false;
+                bool_QuadTree = false;
                 PosicionaEnvelope(&Envelope);
             }
             break;
         case 'f':  // Ativa o algoritmo de forca bruta
-            if (bool_Envelope || bool_Quadtree) {
+            if (bool_Envelope || bool_QuadTree) {
                 bool_Envelope = false;
                 bool_forcaBruta = true;
-                bool_Quadtree = false;
+                bool_QuadTree = false;
             }
             break;
         case 'q':  // Ativa o algoritmo de quadtree
             if (bool_Envelope || bool_forcaBruta) {
                 bool_Envelope = false;
                 bool_forcaBruta = false;
-                bool_Quadtree = true;
+                bool_QuadTree = true;
                 PosicionaEnvelope(&Envelope);
             }
             break;
         case 'm':  // Aumenta o tamanho do campo de visao
             if (DimensaoDoCampoDeVisao < 0.75) {
                 PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao += 0.05);
-                if (bool_Envelope || bool_Quadtree)
+                if (bool_Envelope || bool_QuadTree)
                     PosicionaEnvelope(&Envelope);
             }
             break;
         case 'n':  // Diminui o tamanho do campo de visao
             if (DimensaoDoCampoDeVisao > 0.1) {
                 PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao -= 0.05);
-                if (bool_Envelope || bool_Quadtree)
+                if (bool_Envelope || bool_QuadTree)
                     PosicionaEnvelope(&Envelope);
+            }
+            break;
+        case 'p': // Ativa a pintura da quadtree
+            if (bool_QuadTree) {
+                pinta_QuadTree = !pinta_QuadTree;
             }
             break;
         case 't':
