@@ -7,8 +7,9 @@
 // Marcio Sarroglia Pinho
 // pinho@pucrs.br
 // **********************************************************************
-
+#include <chrono>
 #include <cmath>
+#include <cstring>
 #include <ctime>
 #include <fstream>
 #include <iostream>
@@ -46,7 +47,7 @@ float DimensaoDoCampoDeVisao = 0.25;
 // Limites logicos da area de desenho
 Ponto Minimo, Maximo, Tamanho, Meio;
 Ponto PosicaoDoCampoDeVisao, PontoClicado;
-unsigned long int QTD_PONTOS = 1000;
+unsigned long int QTD_PONTOS;
 
 bool desenhaEixos = true;
 bool FoiClicado = false;
@@ -55,6 +56,7 @@ bool FoiClicado = false;
 bool bool_forcaBruta = true;
 bool bool_Envelope = false;
 bool bool_QuadTree = false;
+bool desenhaQuadTree = false;
 bool pinta_QuadTree = false;
 
 typedef struct nodo_quadtree {
@@ -246,8 +248,38 @@ void init() {
     // Note que o "aspect ratio" dos pontos deve ser o mesmo
     // da janela.Ponto ponto : PontosDoCenario.getNVertices()
 
-    // PontosDoCenario.LePoligono("libTxts/PoligonoDeTeste.txt");
-    GeraPontos(QTD_PONTOS, Ponto(0, 0), Ponto(500, 500));
+    int controle = 0;
+    while (controle != 1 && controle != 2) {
+        cout << "\nVoce deseja: \n1 - Gerar pontos aleatorios \n2 - Carregar um arquivo" << endl;
+        cin >> controle;
+    }
+    if (controle == 1) {
+        cout << "\nQuantos pontos voce deseja gerar: " << endl;
+        cin >> QTD_PONTOS;
+        GeraPontos(QTD_PONTOS, Ponto(0, 0), Ponto(500, 500));
+    } else if (controle == 2) {
+        cout << "\nQual arquivo voce gostaria de carregar: " << endl;
+        cout << "1 - EstadoRS \n2 - PoligonoDeTeste \n3 - PontosDenteDeSerra" << endl;
+        cin >> controle;
+        const char *dir = "tests/";
+        const char *caso = "";
+        switch (controle) {
+            case 1:
+                caso = "EstadoRS.txt";
+                break;
+            case 2:
+                caso = "PoligonoDeTeste.txt";
+                break;
+            case 3:
+                caso = "PontosDenteDeSerra.txt";
+            default:
+                break;
+        }
+        char *s = new char[strlen(dir) + strlen(caso) + 1];
+        strcpy(s, dir);
+        strcat(s, caso);
+        PontosDoCenario.LePoligono(s);
+    }
 
     PontosDoCenario.obtemLimites(Minimo, Maximo);
     Minimo.x--;
@@ -484,6 +516,7 @@ bool colide(nodo_quadtree *nodo, Ponto min, Ponto max) {
     }
     return false;
 }
+
 void calculaQuadTree(nodo_quadtree *nodo, Ponto minEnv, Ponto maxEnv) {
     if (colide(nodo, minEnv, maxEnv)) {
         if (nodo->cheio) {
@@ -540,6 +573,10 @@ void display(void) {
         glLineWidth(3);
         glColor3f(0, 0, 0);
         Envelope.desenhaPoligono();
+        calculaQuadTree(tree, Envelope.getVertice(0), Envelope.getVertice(2));
+    }
+
+    if (desenhaQuadTree) {
         if (!pinta_QuadTree) {
             glLineWidth(2);
             glColor3f(0, 0, 0);
@@ -547,7 +584,6 @@ void display(void) {
         } else {
             PintaQuadTree(tree, 0);
         }
-        calculaQuadTree(tree, Envelope.getVertice(0), Envelope.getVertice(2));
     }
 
     glLineWidth(3);
@@ -559,25 +595,53 @@ void display(void) {
         FoiClicado = false;
     }
 
-    /*cout << "Numero de pontos dentro do triangulo: " << pontosInternos << endl;
-    if (bool_Envelope) {
-        cout << "Numero de pontos dentro do envelope: " << pontosFalsos << endl;
-    }
-    cout << "Numero de pontos fora do triangulo: "
-         << PontosDoCenario.getNVertices() - (pontosInternos + pontosFalsos) << endl;
-    cout << "\n\n\n\n\n\n"
-         << endl;*/
-
-    // Limpa a contagem de pontos
-    pontosInternos = 0;
-    pontosFalsos = 0;
-
     glutSwapBuffers();
 }
 // **********************************************************************
+// void printResults()
+//  Imprime a quantidade de pontos dentro do triangulo,
+//      quantos passaram pelo algoritmo de envelope e quadtree,
+//      e quantos estao fora e nao passaram pelos algoritmos
+// **********************************************************************
+void printResults() {
+    // Zera os contadores de pontos
+    pontosInternos = 0;
+    pontosFalsos = 0;
+
+    auto start = chrono::high_resolution_clock::now();
+
+    if (bool_forcaBruta) {
+        cout << "\n\nAlgoritmo de Forca Bruta: " << endl;
+        for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
+            forcaBruta(PontosDoCenario.getVertice(i));
+        }
+    } else if (bool_Envelope) {
+        cout << "\n\nAlgoritmo de Envelope: " << endl;
+        calculaEnvelope(PontosDoCenario, Envelope.getVertice(0), Envelope.getVertice(2));
+    } else if (bool_QuadTree) {
+        cout << "\n\nAlgoritmo de Quad Tree: " << endl;
+        calculaQuadTree(tree, Envelope.getVertice(0), Envelope.getVertice(2));
+    }
+
+    auto stop = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+
+    cout << "\nNumero de pontos dentro do triangulo: " << pontosInternos << endl;
+    if (bool_Envelope) {
+        cout << "Numero de pontos dentro do envelope: " << pontosFalsos << endl;
+    } else if (bool_QuadTree) {
+        cout << "Numero de pontos dentro de nodos em colisao com o envelope: " << pontosFalsos << endl;
+    }
+    cout << "Numero de pontos fora do triangulo e dos filtros: "
+         << PontosDoCenario.getNVertices() - (pontosInternos + pontosFalsos)
+         << endl;
+    cout << "Tempo de execucao do algoritmo: " << duration.count() << " micros\n"
+         << endl;
+}
+// **********************************************************************
 // ContaTempo(double tempo)
-//      conta um certo nœmero de segundos e informa quanto frames
-// se passaram neste per’odo.
+//      conta um certo numero de segundos e informa quanto frames
+// se passaram neste periodo.
 // **********************************************************************
 void ContaTempo(double tempo) {
     Temporizador T;
@@ -613,6 +677,10 @@ void keyboard(unsigned char key, int x, int y) {
             maxPontosNodo = aux;
             inicializaQuadTree();
             break;
+        case 'd':  // Desenha a QuadTree na tela
+            desenhaQuadTree = !desenhaQuadTree;
+            PosicionaEnvelope(&Envelope);
+            break;
         case 'e':  // Ativa o algoritmo de envelope
             if (bool_forcaBruta || bool_QuadTree) {
                 bool_forcaBruta = false;
@@ -639,26 +707,27 @@ void keyboard(unsigned char key, int x, int y) {
         case 'm':  // Aumenta o tamanho do campo de visao
             if (DimensaoDoCampoDeVisao < 0.75) {
                 PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao += 0.05);
-                if (bool_Envelope || bool_QuadTree)
+                if (bool_Envelope || bool_QuadTree || desenhaQuadTree)
                     PosicionaEnvelope(&Envelope);
             }
             break;
         case 'n':  // Diminui o tamanho do campo de visao
             if (DimensaoDoCampoDeVisao > 0.1) {
                 PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao -= 0.05);
-                if (bool_Envelope || bool_QuadTree)
+                if (bool_Envelope || bool_QuadTree || desenhaQuadTree)
                     PosicionaEnvelope(&Envelope);
             }
             break;
-        case 'p':  // Ativa a pintura da quadtree
-            if (bool_QuadTree) {
-                pinta_QuadTree = !pinta_QuadTree;
-            }
+        case 'p':  // Altera a opcao de pintura da quadtree
+            pinta_QuadTree = !pinta_QuadTree;
             break;
-        case 't':
+        case 's':  // Imprime os resultados no terminal
+            printResults();
+            break;
+        case 't':  // Conta o numero de frames em um determinado tempo
             ContaTempo(3);
             break;
-        case ' ':
+        case ' ':  // Altera a opcao de desenhar os eixos
             desenhaEixos = !desenhaEixos;
             break;
         case 27:      // Termina o programa qdo
