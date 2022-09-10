@@ -3,7 +3,6 @@ bin/
 CMakeLists.txt
 *.o
 Triangulo
-*.txt
 Debug/
 Faixas.h
 freeglut.dll
