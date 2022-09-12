@@ -480,7 +480,6 @@ void pintaPonto(Ponto ponto, int cor) {
 //
 // **********************************************************************
 bool forcaBruta(Ponto ponto) {
-    int sinais[3];
     Ponto auxiliar = {0, 0, 0};
     for (int j = 0; j < 3; j++) {
         Ponto vetorTriangulo = vetoresTriangulo[j];
@@ -489,7 +488,6 @@ bool forcaBruta(Ponto ponto) {
         ProdVetorial(vetorTriangulo, vetorPonto, auxiliar);
         if (auxiliar.z < 0)
             return false;
-        sinais[j] = auxiliar.z;
     }
     pontosInternos++;
     pintaPonto(ponto, Green);
@@ -668,19 +666,13 @@ void ContaTempo(double tempo) {
 //
 // **********************************************************************
 void keyboard(unsigned char key, int x, int y) {
-    bool teste = false;
     size_t aux;
     switch (key) {
         case 'a':  // Altera o numero maximo de pontos
                    // nos nodos da quadtree
-            while (!teste) {
-                cout << "\nDigite o numero maximo de pontos"
-                     << " para cada nodo da quadtree: " << endl;
-                cin >> aux;
-                if (aux > 0 && aux < QTD_PONTOS)
-                    teste = true;
-            }
-            maxPontosNodo = aux;
+            cout << "\nDigite o numero maximo de pontos"
+                 << " para cada nodo da quadtree: " << endl;
+            cin >> maxPontosNodo;
             inicializaQuadTree();
             break;
         case 'd':  // Desenha a QuadTree na tela
