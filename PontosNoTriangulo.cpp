@@ -52,7 +52,7 @@ unsigned long int QTD_PONTOS;
 bool desenhaEixos = true;
 bool FoiClicado = false;
 
-// Variaveis que controlam as propriedades do algoritmo de forca bruta --add
+// Variaveis que controlam as propriedades dos algoritmos
 bool bool_forcaBruta = true;
 bool bool_Envelope = false;
 bool bool_QuadTree = false;
@@ -64,15 +64,10 @@ typedef struct nodo_quadtree {
     bool cheio;                      // Se o nodo estiver cheio, ele nao pode ser dividido
     struct nodo_quadtree *filho[4];  // 4 nodos-filhos
     Poligono pontos;                 // pontos dentro do nodo
-    int qtd_pontos;                  // quantidade de pontos dentro do nodo
-
 } QUADTREE;
 
 QUADTREE *tree;
 
-void calculaEnvelope(Poligono pontos, Ponto min, Ponto max);
-void calculaEnvelope(Poligono pontos);
-void calculaEnvelope(Poligono *pontos, Ponto min, Ponto max);
 // **********************************************************************
 // GeraPontos(int qtd, Ponto Min, Ponto Max)
 //      Metodo que gera pontos aleatorios no intervalo [Min..Max]
@@ -90,7 +85,19 @@ void GeraPontos(unsigned long int qtd, Ponto Min, Ponto Max) {
         PontosDoCenario.insereVertice(Ponto(x, y));
     }
 }
-
+// **********************************************************************
+//  bool colide(Ponto ponto, Ponto min, Ponto max)
+//   verifica se o envelope 1 esta dentro do envelope 2
+//     pode ser usado para pontos se tratar o ponto como um envelope 
+//     que tem o mesmo min e max
+// **********************************************************************
+bool colide (Ponto min1, Ponto max1, Ponto min2, Ponto max2) {
+    if (min1.x <= max2.x && max1.x >= min2.x &&
+        min1.y <= max2.y && max1.y >= min2.y) {
+        return true;
+    }
+    return false;
+}
 // **********************************************************************
 // void CriaTrianguloDoCampoDeVisao()
 //  Cria um triangulo a partir do vetor (1,0,0), girando este vetor
@@ -126,58 +133,6 @@ void CriaEnvelope() {
 
     vetor.rotacionaZ(90);
     Envelope.insereVertice(vetor);
-}
-
-void subdivide(QUADTREE *nodo, Ponto min, Ponto max) {
-    // define o centro do nodo
-    float meioX = (nodo->Min.x + nodo->Max.x) / 2;
-    float meioY = (nodo->Min.y + nodo->Max.y) / 2;
-
-    // filho direita em cima
-    nodo->filho[0] = new nodo_quadtree;
-    nodo->filho[0]->Min.x = meioX;
-    nodo->filho[0]->Min.y = meioY;
-    nodo->filho[0]->Max = nodo->Max;
-
-    // filho esquerda em cima
-    nodo->filho[1] = new nodo_quadtree;
-    nodo->filho[1]->Min.x = nodo->Min.x;
-    nodo->filho[1]->Min.y = meioY;
-    nodo->filho[1]->Max.x = meioX;
-    nodo->filho[1]->Max.y = nodo->Max.y;
-
-    // filho esquerda em baixo
-    nodo->filho[2] = new nodo_quadtree;
-    nodo->filho[2]->Min = nodo->Min;
-    nodo->filho[2]->Max.x = meioX;
-    nodo->filho[2]->Max.y = meioY;
-
-    // filho direita em baixo
-    nodo->filho[3] = new nodo_quadtree;
-    nodo->filho[3]->Min.x = meioX;
-    nodo->filho[3]->Min.y = nodo->Min.y;
-    nodo->filho[3]->Max.x = nodo->Max.x;
-    nodo->filho[3]->Max.y = meioY;
-}
-
-void criaQuadTree(nodo_quadtree *nodo, Ponto min, Ponto max) {
-    nodo->Min = min;
-    nodo->Max = max;
-    calculaEnvelope(&(nodo->pontos), nodo->Min, nodo->Max);
-    nodo->qtd_pontos = nodo->pontos.getNVertices();
-    nodo->cheio = nodo->qtd_pontos > maxPontosNodo ? true : false;
-
-    if (nodo->cheio) {
-        subdivide(nodo, min, max);
-        for (int i = 0; i < 4; i++) {
-            criaQuadTree(nodo->filho[i], nodo->filho[i]->Min, nodo->filho[i]->Max);
-        }
-    }
-}
-
-void inicializaQuadTree() {
-    tree = new QUADTREE;
-    criaQuadTree(tree, Minimo, Maximo);
 }
 
 // **********************************************************************
@@ -235,6 +190,78 @@ void PosicionaEnvelope(Poligono *envelope) {
     envelope->alteraVertice(1, Ponto(direita, baixo, 0));
     envelope->alteraVertice(2, Ponto(direita, cima, 0));
     envelope->alteraVertice(3, Ponto(esquerda, cima, 0));
+}
+// **********************************************************************
+//  subdivide(QUADTREE *nodo, Ponto min, Ponto max)
+//      subdivide o nodo em 4 nodos-filhos
+//
+// **********************************************************************
+void subdivide(QUADTREE *nodo, Ponto min, Ponto max) {
+    // define o centro do nodo
+    float meioX = (nodo->Min.x + nodo->Max.x) / 2;
+    float meioY = (nodo->Min.y + nodo->Max.y) / 2;
+
+    // filho direita em cima
+    nodo->filho[0] = new nodo_quadtree;
+    nodo->filho[0]->Min.x = meioX;
+    nodo->filho[0]->Min.y = meioY;
+    nodo->filho[0]->Max = nodo->Max;
+
+    // filho esquerda em cima
+    nodo->filho[1] = new nodo_quadtree;
+    nodo->filho[1]->Min.x = nodo->Min.x;
+    nodo->filho[1]->Min.y = meioY;
+    nodo->filho[1]->Max.x = meioX;
+    nodo->filho[1]->Max.y = nodo->Max.y;
+
+    // filho esquerda em baixo
+    nodo->filho[2] = new nodo_quadtree;
+    nodo->filho[2]->Min = nodo->Min;
+    nodo->filho[2]->Max.x = meioX;
+    nodo->filho[2]->Max.y = meioY;
+
+    // filho direita em baixo
+    nodo->filho[3] = new nodo_quadtree;
+    nodo->filho[3]->Min.x = meioX;
+    nodo->filho[3]->Min.y = nodo->Min.y;
+    nodo->filho[3]->Max.x = nodo->Max.x;
+    nodo->filho[3]->Max.y = meioY;
+}
+// **********************************************************************
+// calculaPontosNoNodo(Poligono *pontos, Ponto min, Ponto max)
+//      salva os pontos dentro de cada nodo
+//
+// **********************************************************************
+void calculaPontosNoNodo(Poligono *pontos, Ponto min, Ponto max) {
+    for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
+        Ponto ponto = PontosDoCenario.getVertice(i);
+
+        if (colide(ponto, ponto, min, max)) {
+            pontos->insereVertice(ponto);
+        }
+    }
+}
+// **********************************************************************
+// criaQuadTree(nodo_quadtree *nodo, Ponto min, Ponto max)
+//      Cria a quadtree e seus nodos filhos
+//
+// **********************************************************************
+void criaQuadTree(nodo_quadtree *nodo, Ponto min, Ponto max) {
+    nodo->Min = min;
+    nodo->Max = max;
+    calculaPontosNoNodo(&(nodo->pontos), nodo->Min, nodo->Max);
+    nodo->cheio = nodo->pontos.getNVertices() > maxPontosNodo ? true : false;
+
+    if (nodo->cheio) {
+        subdivide(nodo, min, max);
+        for (int i = 0; i < 4; i++) {
+            criaQuadTree(nodo->filho[i], nodo->filho[i]->Min, nodo->filho[i]->Max);
+        }
+    }
+}
+void inicializaQuadTree() {
+    tree = new QUADTREE;
+    criaQuadTree(tree, Minimo, Maximo);
 }
 // **********************************************************************
 // void init()
@@ -363,7 +390,11 @@ void DesenhaLinha(Ponto P1, Ponto P2) {
     glVertex3f(P2.x, P2.y, P2.z);
     glEnd();
 }
-
+// **********************************************************************
+//  DesenhaQuadTree(nodo_quadtree *nodo)
+//   Desenha a quadtree sem cores
+//
+// **********************************************************************
 void DesenhaQuadTree(nodo_quadtree *nodo) {
     Poligono envelope = Poligono();
     envelope.insereVertice(Ponto(nodo->Max.x, nodo->Min.y));
@@ -379,7 +410,11 @@ void DesenhaQuadTree(nodo_quadtree *nodo) {
         }
     }
 }
-
+// **********************************************************************
+//  PintaQuadTree(nodo_quadtree *nodo, int controle)
+//      Funcao recursiva que pinta os nodos da quadtree com cores diferentes
+//
+// **********************************************************************
 void PintaQuadTree(nodo_quadtree *nodo, int controle) {
     glLineWidth(1);
     switch (controle) {
@@ -423,7 +458,6 @@ void PintaQuadTree(nodo_quadtree *nodo, int controle) {
             PintaQuadTree(nodo->filho[i], controle);
     }
 }
-
 // **********************************************************************
 // void pintaPonto(Poligono pontos, int cor)
 // pinta um ponto com uma cor indicada
@@ -453,8 +487,7 @@ bool forcaBruta(Ponto ponto) {
         ProdVetorial(vetorTriangulo, vetorPonto, auxiliar);
         sinais[j] = auxiliar.z;
     }
-    if (sinais[0] > 0 && sinais[1] > 0 && sinais[2] > 0 ||
-        sinais[0] < 0 && sinais[1] < 0 && sinais[2] < 0) {
+    if (sinais[0] > 0 && sinais[1] > 0 && sinais[2] > 0) {
         pontosInternos++;
         pintaPonto(ponto, Green);
         return true;
@@ -471,36 +504,11 @@ void calculaEnvelope(Poligono pontos, Ponto min, Ponto max) {
     for (int i = 0; i < pontos.getNVertices(); i++) {
         Ponto ponto = pontos.getVertice(i);
 
-        if (ponto.x >= min.x &&
-            ponto.x <= max.x &&
-            ponto.y >= min.y &&
-            ponto.y <= max.y) {
+        if (colide(ponto, ponto, min, max)) {
             if (!forcaBruta(ponto)) {
                 pontosFalsos++;
                 pintaPonto(ponto, DarkYellow);
             }
-        }
-    }
-}
-void calculaEnvelope(Poligono *pontos, Ponto min, Ponto max) {
-    for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
-        Ponto ponto = PontosDoCenario.getVertice(i);
-
-        if (ponto.x >= min.x &&
-            ponto.x <= max.x &&
-            ponto.y >= min.y &&
-            ponto.y <= max.y) {
-            pontos->insereVertice(ponto);
-        }
-    }
-}
-void calculaEnvelope(Poligono pontos) {
-    for (size_t i = 0; i < pontos.getNVertices(); i++) {
-        Ponto ponto = pontos.getVertice(i);
-
-        if (!forcaBruta(ponto)) {
-            pontosFalsos++;
-            pintaPonto(ponto, DarkYellow);
         }
     }
 }
@@ -509,27 +517,24 @@ void calculaEnvelope(Poligono pontos) {
 //  verifica os pontos que estão dentro de nodos
 //   que tem colisao com o envelope do triangulo
 // **********************************************************************
-bool colide(nodo_quadtree *nodo, Ponto min, Ponto max) {
-    if (min.x <= nodo->Max.x && max.x >= nodo->Min.x &&
-        min.y <= nodo->Max.y && max.y >= nodo->Min.y) {
-        return true;
-    }
-    return false;
-}
-
 void calculaQuadTree(nodo_quadtree *nodo, Ponto minEnv, Ponto maxEnv) {
-    if (colide(nodo, minEnv, maxEnv)) {
+    if (colide(nodo->Min,nodo->Max, minEnv, maxEnv)) {
         if (nodo->cheio) {
             for (int i = 0; i < 4; i++) {
                 calculaQuadTree(nodo->filho[i], minEnv, maxEnv);
             }
         }
         if (!nodo->cheio) {
-            calculaEnvelope(nodo->pontos);
+            for (size_t i = 0; i < nodo->pontos.getNVertices(); i++) {
+                Ponto ponto = nodo->pontos.getVertice(i);
+                if (!forcaBruta(ponto)) {
+                    pontosFalsos++;
+                    pintaPonto(ponto, DarkYellow);
+                }
+            }
         }
     }
 }
-
 // **********************************************************************
 //  void display( void )
 //
