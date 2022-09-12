@@ -31,10 +31,15 @@ O programa será limpo automaticamente.
 O campo de visão pode ser movimentado, rotacionado e ter sua dimensão alterada usando os seguintes comandos:
 
 `up` - Avança o campo de visão para "frente"
+
 `down` - Avança o campo de visão para "trás"
+
 `left` - Rotaciona o campo de visão no sentido anti-horário
+
 `right` - Rotaciona o campo de visão no sentido horário
+
 `m` - Aumenta a dimensão do campo de visão em 5% da largura da janela
+
 `n` - Reduz a dimensão do campo de visão em 5% da largura da janela
 >A dimensão não pode ser inferior a 5% nem superior a 75% da largura da janela
 
@@ -43,7 +48,9 @@ O campo de visão pode ser movimentado, rotacionado e ter sua dimensão alterada
 Os algoritmos que encontram os pontos dentro do campo de visão podem ser alterados com os seguintes comandos:
 
 `e` - Ativa o algoritmo de envelope 
+
 `f` - Ativa o algoritmo de força bruta
+
 `q` - Ativa o algoritmo de quadtree
 >O algoritmo de envelope e quadtree, quando ativados, desenham um envelope em volta do campo de visão
 
@@ -55,7 +62,9 @@ Importante notar que não é possível desligar um algoritmo, apenas alterar o a
 ### Desenhos na Tela
 
 `space` - Liga/desliga o desenho dos eixos x e y na tela
+
 `d` - Liga/desliga o desenho da quadtree na tela
+
 `p` - Liga/desliga a pintura dos níveis da quadtree
 >Os níveis são pintados nos seus eixos, com cores que se repetem a cada quatro níveis
  
@@ -68,4 +77,5 @@ Importante notar que não é possível desligar um algoritmo, apenas alterar o a
 > - A quantidade de pontos que não passaram em nenhum filtro e estão fora do triângulo
 
 `t` - Conta o número de frames nos próximos 3 segundos
+
 `esc` - Termina o programa
