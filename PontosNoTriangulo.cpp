@@ -46,7 +46,7 @@ float DimensaoDoCampoDeVisao = 0.25;
 
 // Limites logicos da area de desenho
 Ponto Minimo, Maximo, Tamanho, Meio;
-Ponto PosicaoDoCampoDeVisao, PontoClicado;
+Ponto PosicaoDoCampoDeVisao, vetoresTriangulo[3], PontoClicado;
 unsigned long int QTD_PONTOS;
 
 bool desenhaEixos = true;
@@ -88,10 +88,10 @@ void GeraPontos(unsigned long int qtd, Ponto Min, Ponto Max) {
 // **********************************************************************
 //  bool colide(Ponto ponto, Ponto min, Ponto max)
 //   verifica se o envelope 1 esta dentro do envelope 2
-//     pode ser usado para pontos se tratar o ponto como um envelope 
+//     pode ser usado para pontos se tratar o ponto como um envelope
 //     que tem o mesmo min e max
 // **********************************************************************
-bool colide (Ponto min1, Ponto max1, Ponto min2, Ponto max2) {
+bool colide(Ponto min1, Ponto max1, Ponto min2, Ponto max2) {
     if (min1.x <= max2.x && max1.x >= min2.x &&
         min1.y <= max2.y && max1.y >= min2.y) {
         return true;
@@ -149,6 +149,9 @@ void PosicionaTrianguloDoCampoDeVisao(float dimensao) {
         temp = TrianguloBase.getVertice(i);
         temp.rotacionaZ(AnguloDoCampoDeVisao);
         CampoDeVisao.alteraVertice(i, PosicaoDoCampoDeVisao + temp * tamanho);
+    }
+    for (int j = 0; j < 3; j++) {
+        vetoresTriangulo[j] = CampoDeVisao.getVertice(j) - CampoDeVisao.getVertice((j + 1) % 3);
     }
 }
 // **********************************************************************
@@ -480,19 +483,17 @@ bool forcaBruta(Ponto ponto) {
     int sinais[3];
     Ponto auxiliar = {0, 0, 0};
     for (int j = 0; j < 3; j++) {
-        Ponto vetorTriangulo =
-            CampoDeVisao.getVertice(j) - CampoDeVisao.getVertice((j + 1) % 3);
+        Ponto vetorTriangulo = vetoresTriangulo[j];
         Ponto vetorPonto = ponto - CampoDeVisao.getVertice(j);
 
         ProdVetorial(vetorTriangulo, vetorPonto, auxiliar);
+        if (auxiliar.z < 0)
+            return false;
         sinais[j] = auxiliar.z;
     }
-    if (sinais[0] > 0 && sinais[1] > 0 && sinais[2] > 0) {
-        pontosInternos++;
-        pintaPonto(ponto, Green);
-        return true;
-    }
-    return false;
+    pontosInternos++;
+    pintaPonto(ponto, Green);
+    return true;
 }
 // **********************************************************************
 // void calculaEnvelope(Ponto min, Ponto max)
@@ -518,7 +519,7 @@ void calculaEnvelope(Poligono pontos, Ponto min, Ponto max) {
 //   que tem colisao com o envelope do triangulo
 // **********************************************************************
 void calculaQuadTree(nodo_quadtree *nodo, Ponto minEnv, Ponto maxEnv) {
-    if (colide(nodo->Min,nodo->Max, minEnv, maxEnv)) {
+    if (colide(nodo->Min, nodo->Max, minEnv, maxEnv)) {
         if (nodo->cheio) {
             for (int i = 0; i < 4; i++) {
                 calculaQuadTree(nodo->filho[i], minEnv, maxEnv);
