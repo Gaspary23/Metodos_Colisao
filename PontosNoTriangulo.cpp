@@ -1,11 +1,13 @@
 // **********************************************************************
-// PUCRS/Escola PolitŽcnica
+// PUCRS/Escola Politecnica
 // COMPUTAÇÃO GRÁFICA
 //
 // Programa basico para criar aplicacoes 2D em OpenGL
 //
-// Marcio Sarroglia Pinho
-// pinho@pucrs.br
+// Marcio Sarroglia Pinho - pinho@pucrs.br
+//
+// Alterado para o trabalho da disciplina por:
+// Pedro da Cunha Gaspary - 21101429 e Lucas Marchesan Cunha - 21101060
 // **********************************************************************
 #include <chrono>
 #include <cmath>
@@ -61,13 +63,12 @@ bool pinta_QuadTree = false;
 
 typedef struct nodo_quadtree {
     Ponto Min, Max;                  // Limites do nodo
-    bool cheio;                      // Se o nodo estiver cheio, ele nao pode ser dividido
+    bool cheio;                      // Se o nodo estiver cheio, ele deve ser dividido
     struct nodo_quadtree *filho[4];  // 4 nodos-filhos
     Poligono pontos;                 // pontos dentro do nodo
 } QUADTREE;
 
 QUADTREE *tree;
-
 // **********************************************************************
 // GeraPontos(int qtd, Ponto Min, Ponto Max)
 //      Metodo que gera pontos aleatorios no intervalo [Min..Max]
@@ -119,7 +120,11 @@ void CriaTrianguloDoCampoDeVisao() {
     TrianguloBase.insereVertice(vetor);
     CampoDeVisao.insereVertice(vetor);
 }
-
+// **********************************************************************
+// void CriaEnvelope()
+//  Cria um envelope a partir do vetor (1,0,0), girando este vetor
+//  em 90 graus
+// **********************************************************************
 void CriaEnvelope() {
     Ponto vetor = Ponto(1, 0, 0);
 
@@ -134,12 +139,11 @@ void CriaEnvelope() {
     vetor.rotacionaZ(90);
     Envelope.insereVertice(vetor);
 }
-
 // **********************************************************************
 // void PosicionaTrianguloDoCampoDeVisao(float dimensao)
 //  Posiciona o campo de visao na posicao PosicaoDoCampoDeVisao,
 //  com a orientacao "AnguloDoCampoDeVisao".
-//  O tamanho do campo de visao eh de 25% da largura da janela.
+//  O tamanho padrao do campo de visao eh de 25% da largura da janela.
 // **********************************************************************
 void PosicionaTrianguloDoCampoDeVisao(float dimensao) {
     float tamanho = Tamanho.x * dimensao;
@@ -164,7 +168,9 @@ void AvancaCampoDeVisao(float distancia) {
     PosicaoDoCampoDeVisao = PosicaoDoCampoDeVisao + vetor * distancia;
 }
 // **********************************************************************
-//
+//  void PosicionaEnvelope(Poligono *envelope)
+//      Posiciona o envelope a partir dos vertices
+//      do triangulo do campo de visao
 // **********************************************************************
 void PosicionaEnvelope(Poligono *envelope) {
     float esquerda, direita, cima, baixo;
@@ -195,9 +201,8 @@ void PosicionaEnvelope(Poligono *envelope) {
     envelope->alteraVertice(3, Ponto(esquerda, cima, 0));
 }
 // **********************************************************************
-//  subdivide(QUADTREE *nodo, Ponto min, Ponto max)
+//  void subdivide(QUADTREE *nodo, Ponto min, Ponto max)
 //      subdivide o nodo em 4 nodos-filhos
-//
 // **********************************************************************
 void subdivide(QUADTREE *nodo, Ponto min, Ponto max) {
     // define o centro do nodo
@@ -231,9 +236,8 @@ void subdivide(QUADTREE *nodo, Ponto min, Ponto max) {
     nodo->filho[3]->Max.y = meioY;
 }
 // **********************************************************************
-// calculaPontosNoNodo(Poligono *pontos, Ponto min, Ponto max)
+// void calculaPontosNoNodo(Poligono *pontos, Ponto min, Ponto max)
 //      salva os pontos dentro de cada nodo
-//
 // **********************************************************************
 void calculaPontosNoNodo(Poligono *pontos, Ponto min, Ponto max) {
     for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
@@ -245,9 +249,8 @@ void calculaPontosNoNodo(Poligono *pontos, Ponto min, Ponto max) {
     }
 }
 // **********************************************************************
-// criaQuadTree(nodo_quadtree *nodo, Ponto min, Ponto max)
+// void criaQuadTree(nodo_quadtree *nodo, Ponto min, Ponto max)
 //      Cria a quadtree e seus nodos filhos
-//
 // **********************************************************************
 void criaQuadTree(nodo_quadtree *nodo, Ponto min, Ponto max) {
     nodo->Min = min;
@@ -331,7 +334,6 @@ void init() {
     PosicionaEnvelope(&Envelope);
     inicializaQuadTree();
 }
-
 double nFrames = 0;
 double TempoTotal = 0;
 // **********************************************************************
@@ -374,7 +376,8 @@ void reshape(int w, int h) {
     glLoadIdentity();
 }
 // **********************************************************************
-//
+//  void DesenhaEixos()
+//      Desenha os eixos X e Y na tela
 // **********************************************************************
 void DesenhaEixos() {
     glBegin(GL_LINES);
@@ -386,7 +389,10 @@ void DesenhaEixos() {
     glVertex2f(Meio.x, Maximo.y);
     glEnd();
 }
-
+// **********************************************************************
+//  void DesenhaLinha(Ponto P1, Ponto P2)
+//      Desenha uma linha entre os pontos P1 e P2
+// **********************************************************************
 void DesenhaLinha(Ponto P1, Ponto P2) {
     glBegin(GL_LINES);
     glVertex3f(P1.x, P1.y, P1.z);
@@ -394,9 +400,8 @@ void DesenhaLinha(Ponto P1, Ponto P2) {
     glEnd();
 }
 // **********************************************************************
-//  DesenhaQuadTree(nodo_quadtree *nodo)
+//  void DesenhaQuadTree(nodo_quadtree *nodo)
 //   Desenha a quadtree sem cores
-//
 // **********************************************************************
 void DesenhaQuadTree(nodo_quadtree *nodo) {
     Poligono envelope = Poligono();
@@ -414,9 +419,8 @@ void DesenhaQuadTree(nodo_quadtree *nodo) {
     }
 }
 // **********************************************************************
-//  PintaQuadTree(nodo_quadtree *nodo, int controle)
-//      Funcao recursiva que pinta os nodos da quadtree com cores diferentes
-//
+//  void PintaQuadTree(nodo_quadtree *nodo, int controle)
+//      Pinta os nodos da quadtree com cores diferentes para cada nivel
 // **********************************************************************
 void PintaQuadTree(nodo_quadtree *nodo, int controle) {
     glLineWidth(1);
@@ -462,9 +466,8 @@ void PintaQuadTree(nodo_quadtree *nodo, int controle) {
     }
 }
 // **********************************************************************
-// void pintaPonto(Poligono pontos, int cor)
-// pinta um ponto com uma cor indicada
-//
+//  void pintaPonto(Poligono pontos, int cor)
+//      pinta um ponto com uma cor indicada
 // **********************************************************************
 void pintaPonto(Ponto ponto, int cor) {
     glColor3f(1.0f, 0.0f, 0.0f);
@@ -476,8 +479,7 @@ void pintaPonto(Ponto ponto, int cor) {
 }
 // **********************************************************************
 //  bool forcaBruta(Ponto ponto)
-//  Executa o algoritmo de forca bruta para um ponto
-//
+//      Executa o algoritmo de forca bruta para um ponto
 // **********************************************************************
 bool forcaBruta(Ponto ponto) {
     Ponto auxiliar = {0, 0, 0};
@@ -494,10 +496,8 @@ bool forcaBruta(Ponto ponto) {
     return true;
 }
 // **********************************************************************
-// void calculaEnvelope(Ponto min, Ponto max)
-// void calculaEnvelope(Poligono *pontos, Ponto min, Ponto max)
-// verifica se os pontos estão dentro de um envelope
-//
+//  void calculaEnvelope(Poligono pontos, Ponto min, Ponto max)
+//      verifica se os pontos estão dentro de um envelope
 // **********************************************************************
 void calculaEnvelope(Poligono pontos, Ponto min, Ponto max) {
     for (int i = 0; i < pontos.getNVertices(); i++) {
@@ -513,8 +513,8 @@ void calculaEnvelope(Poligono pontos, Ponto min, Ponto max) {
 }
 // **********************************************************************
 //  void calculaQuadTree(nodo_quadtree *nodo)
-//  verifica os pontos que estão dentro de nodos
-//   que tem colisao com o envelope do triangulo
+//      verifica os pontos que estão dentro de nodos
+//       que tem colisao com o envelope do triangulo
 // **********************************************************************
 void calculaQuadTree(nodo_quadtree *nodo, Ponto minEnv, Ponto maxEnv) {
     if (colide(nodo->Min, nodo->Max, minEnv, maxEnv)) {
@@ -523,7 +523,7 @@ void calculaQuadTree(nodo_quadtree *nodo, Ponto minEnv, Ponto maxEnv) {
                 calculaQuadTree(nodo->filho[i], minEnv, maxEnv);
             }
         }
-        if (!nodo->cheio) {
+        else {
             for (size_t i = 0; i < nodo->pontos.getNVertices(); i++) {
                 Ponto ponto = nodo->pontos.getVertice(i);
                 if (!forcaBruta(ponto)) {
@@ -535,8 +535,8 @@ void calculaQuadTree(nodo_quadtree *nodo, Ponto minEnv, Ponto maxEnv) {
     }
 }
 // **********************************************************************
-//  void display( void )
-//
+//  void display (void)
+//      Funcao responsavel por desenhar os objetos na tela
 // **********************************************************************
 void display(void) {
     // Limpa a tela coma cor de fundo
@@ -545,10 +545,6 @@ void display(void) {
     // Define os limites lógicos da área OpenGL dentro da Janela
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-
-    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    // Coloque aqui as chamadas das rotinas que desenham os objetos
-    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     if (desenhaEixos) {
         glLineWidth(1);
@@ -602,10 +598,10 @@ void display(void) {
     glutSwapBuffers();
 }
 // **********************************************************************
-// void printResults()
-//  Imprime a quantidade de pontos dentro do triangulo,
-//      quantos passaram pelo algoritmo de envelope e quadtree,
-//      e quantos estao fora e nao passaram pelos algoritmos
+//  void printResults()
+//      Imprime a quantidade de pontos dentro do triangulo,
+//        quantos passaram pelo algoritmo de envelope ou quadtree
+//        e quantos estao fora e nao passaram pelos algoritmos
 // **********************************************************************
 void printResults() {
     // Zera os contadores de pontos
@@ -645,7 +641,7 @@ void printResults() {
 // **********************************************************************
 // ContaTempo(double tempo)
 //      conta um certo numero de segundos e informa quanto frames
-// se passaram neste periodo.
+//        se passaram neste periodo.
 // **********************************************************************
 void ContaTempo(double tempo) {
     Temporizador T;
@@ -663,7 +659,7 @@ void ContaTempo(double tempo) {
 }
 // **********************************************************************
 //  void keyboard ( unsigned char key, int x, int y )
-//
+//      Funcao responsavel pelos eventos do teclado
 // **********************************************************************
 void keyboard(unsigned char key, int x, int y) {
     size_t aux;
@@ -761,10 +757,10 @@ void arrow_keys(int a_keys, int x, int y) {
     glutPostRedisplay();
 }
 // **********************************************************************
-// Esta fun ‹o captura o clique do botao direito do mouse sobre a ‡rea de
-// desenho e converte a coordenada para o sistema de refer ncia definido
-// na glOrtho (ver fun ‹o reshape)
-// Este c—digo Ž baseado em http://hamala.se/forums/viewtopic.php?t=20
+// Esta funcao captura o clique do botao direito do mouse sobre a area de
+// desenho e converte a coordenada para o sistema de referencia definido
+// na glOrtho (ver funcao reshape)
+// Este codigo e baseado em http://hamala.se/forums/viewtopic.php?t=20
 // **********************************************************************
 void Mouse(int button, int state, int x, int y) {
     GLint viewport[4];
@@ -786,7 +782,6 @@ void Mouse(int button, int state, int x, int y) {
     PontoClicado = Ponto(ox, oy, oz);
     FoiClicado = true;
 }
-
 // **********************************************************************
 //  void main ( int argc, char** argv )
 //
