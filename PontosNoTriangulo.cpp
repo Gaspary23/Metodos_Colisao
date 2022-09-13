@@ -50,6 +50,7 @@ float DimensaoDoCampoDeVisao = 0.25;
 Ponto Minimo, Maximo, Tamanho, Meio;
 Ponto PosicaoDoCampoDeVisao, vetoresTriangulo[3], PontoClicado;
 unsigned long int QTD_PONTOS;
+int qtd_colisoes;
 
 bool desenhaEixos = true;
 bool FoiClicado = false;
@@ -281,7 +282,7 @@ void init() {
     // Note que o "aspect ratio" dos pontos deve ser o mesmo
     // da janela.Ponto ponto : PontosDoCenario.getNVertices()
 
-    int controle = 0;
+    /*int controle = 0;
     while (controle != 1 && controle != 2) {
         cout << "\nVoce deseja: \n1 - Gerar pontos aleatorios \n2 - Carregar um arquivo" << endl;
         cin >> controle;
@@ -312,7 +313,8 @@ void init() {
         strcpy(s, dir);
         strcat(s, caso);
         PontosDoCenario.LePoligono(s);
-    }
+    }*/
+    GeraPontos(1000, Ponto(0, 0), Ponto(500, 500));
 
     PontosDoCenario.obtemLimites(Minimo, Maximo);
     Minimo.x--;
@@ -522,8 +524,8 @@ void calculaQuadTree(nodo_quadtree *nodo, Ponto minEnv, Ponto maxEnv) {
             for (int i = 0; i < 4; i++) {
                 calculaQuadTree(nodo->filho[i], minEnv, maxEnv);
             }
-        }
-        else {
+        } else {
+            qtd_colisoes++;
             for (size_t i = 0; i < nodo->pontos.getNVertices(); i++) {
                 Ponto ponto = nodo->pontos.getVertice(i);
                 if (!forcaBruta(ponto)) {
@@ -607,6 +609,7 @@ void printResults() {
     // Zera os contadores de pontos
     pontosInternos = 0;
     pontosFalsos = 0;
+    qtd_colisoes = 0;  
 
     auto start = chrono::high_resolution_clock::now();
 
@@ -631,6 +634,7 @@ void printResults() {
         cout << "Numero de pontos dentro do envelope: " << pontosFalsos << endl;
     } else if (bool_QuadTree) {
         cout << "Numero de pontos dentro de nodos em colisao com o envelope: " << pontosFalsos << endl;
+        cout << "Numero de nodos em colisao com o envelope: " << qtd_colisoes << endl;
     }
     cout << "Numero de pontos fora do triangulo e dos filtros: "
          << PontosDoCenario.getNVertices() - (pontosInternos + pontosFalsos)
