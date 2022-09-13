@@ -275,14 +275,11 @@ void inicializaQuadTree() {
 //  Faz as inicializacoes das variaveis de estado da aplicacao
 // **********************************************************************
 void init() {
-    // Define a cor do fundo da tela (Branco)
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-
     // Gera ou Carrega os pontos do cenario.
     // Note que o "aspect ratio" dos pontos deve ser o mesmo
     // da janela.Ponto ponto : PontosDoCenario.getNVertices()
 
-    /*int controle = 0;
+    int controle = 0;
     while (controle != 1 && controle != 2) {
         cout << "\nVoce deseja: \n1 - Gerar pontos aleatorios \n2 - Carregar um arquivo" << endl;
         cin >> controle;
@@ -313,8 +310,7 @@ void init() {
         strcpy(s, dir);
         strcat(s, caso);
         PontosDoCenario.LePoligono(s);
-    }*/
-    GeraPontos(1000, Ponto(0, 0), Ponto(500, 500));
+    }
 
     PontosDoCenario.obtemLimites(Minimo, Maximo);
     Minimo.x--;
@@ -796,6 +792,9 @@ void Mouse(int button, int state, int x, int y) {
 int main(int argc, char **argv) {
     cout << "Programa OpenGL" << endl;
 
+    // executa algumas inicializações
+    init();
+
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGB);
     glutInitWindowPosition(0, 0);
@@ -807,8 +806,8 @@ int main(int argc, char **argv) {
     // que aparecera na barra de titulo da janela.
     glutCreateWindow("Poligonos em OpenGL");
 
-    // executa algumas inicializações
-    init();
+    // Define a cor do fundo da tela (Branco)
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
     // Define que o tratador de evento para
     // o redesenho da tela. A funcao "display"
