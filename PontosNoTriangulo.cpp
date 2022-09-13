@@ -51,7 +51,6 @@ Ponto Minimo, Maximo, Tamanho, Meio;
 Ponto PosicaoDoCampoDeVisao, vetoresTriangulo[3], PontoClicado;
 unsigned long int QTD_PONTOS;
 size_t qtd_colisoes, qtd_forcaBruta;
-
 bool desenhaEixos = true;
 bool FoiClicado = false;
 
@@ -64,14 +63,14 @@ bool pinta_QuadTree = false;
 
 typedef struct nodo_quadtree {
     Ponto Min, Max;                  // Limites do nodo
-    bool cheio;                      // Se o nodo estiver cheio, ele deve ser dividido
+    bool folha;                      // Se o nodo estiver cheio, ele deve ser dividido
     struct nodo_quadtree *filho[4];  // 4 nodos-filhos
     Poligono pontos;                 // pontos dentro do nodo
 } QUADTREE;
 
 QUADTREE *tree;
 // **********************************************************************
-// GeraPontos(int qtd, Ponto Min, Ponto Max)
+// GeraPontos(unsigned long int qtd, Ponto Min, Ponto Max)
 //      Metodo que gera pontos aleatorios no intervalo [Min..Max]
 // **********************************************************************
 void GeraPontos(unsigned long int qtd, Ponto Min, Ponto Max) {
@@ -88,7 +87,7 @@ void GeraPontos(unsigned long int qtd, Ponto Min, Ponto Max) {
     }
 }
 // **********************************************************************
-//  bool colide(Ponto ponto, Ponto min, Ponto max)
+//  bool colide(Ponto min1, Ponto max1, Ponto min2, Ponto max2)
 //   verifica se o envelope 1 esta dentro do envelope 2
 //     pode ser usado para pontos se tratar o ponto como um envelope
 //     que tem o mesmo min e max
@@ -257,9 +256,9 @@ void criaQuadTree(nodo_quadtree *nodo, Ponto min, Ponto max) {
     nodo->Min = min;
     nodo->Max = max;
     calculaPontosNoNodo(&(nodo->pontos), nodo->Min, nodo->Max);
-    nodo->cheio = nodo->pontos.getNVertices() > maxPontosNodo ? true : false;
+    nodo->folha = nodo->pontos.getNVertices() > maxPontosNodo ? false : true;
 
-    if (nodo->cheio) {
+    if (!nodo->folha) {
         subdivide(nodo, min, max);
         for (int i = 0; i < 4; i++) {
             criaQuadTree(nodo->filho[i], nodo->filho[i]->Min, nodo->filho[i]->Max);
@@ -276,9 +275,7 @@ void inicializaQuadTree() {
 // **********************************************************************
 void init() {
     // Gera ou Carrega os pontos do cenario.
-    // Note que o "aspect ratio" dos pontos deve ser o mesmo
-    // da janela.Ponto ponto : PontosDoCenario.getNVertices()
-
+    // Note que o "aspect ratio" dos pontos deve ser o mesmo da janela.
     int controle = 0;
     while (controle != 1 && controle != 2) {
         cout << "\nVoce deseja: \n1 - Gerar pontos aleatorios \n2 - Carregar um arquivo" << endl;
@@ -290,20 +287,25 @@ void init() {
         GeraPontos(QTD_PONTOS, Ponto(0, 0), Ponto(500, 500));
     } else if (controle == 2) {
         cout << "\nQual arquivo voce gostaria de carregar: " << endl;
-        cout << "1 - EstadoRS \n2 - PoligonoDeTeste \n3 - PontosDenteDeSerra" << endl;
+        cout << "1 - CenarioDeTeste \n2 - CenarioGrande \n3 - EstadoRS \n4 - PontosDenteDeSerra \n5 - PoligonoDeTeste" << endl;
         cin >> controle;
         const char *dir = "tests/";
         const char *caso = "";
         switch (controle) {
             case 1:
-                caso = "EstadoRS.txt";
+                caso = "CenarioDeTeste.txt";
                 break;
             case 2:
-                caso = "PoligonoDeTeste.txt";
+                caso = "CenarioGrande.txt";
                 break;
             case 3:
+                caso = "EstadoRS.txt";
+                break;
+            case 4:
                 caso = "PontosDenteDeSerra.txt";
-            default:
+                break;
+            case 5:
+                caso = "PoligonoDeTeste.txt";
                 break;
         }
         char *s = new char[strlen(dir) + strlen(caso) + 1];
@@ -350,15 +352,15 @@ void animate() {
         glutPostRedisplay();
     }
     if (TempoTotal > 5.0) {
-        cout << "Tempo Acumulado: " << TempoTotal << " segundos. ";
-        /*cout << "Nros de Frames sem desenho: " << nFrames << endl;
-        cout << "FPS(sem desenho): " << nFrames / TempoTotal << endl;*/
+        cout << "\nTempo Acumulado: " << TempoTotal << " segundos. " << endl;
+        cout << "Nros de Frames sem desenho: " << nFrames << endl;
+        cout << "FPS(sem desenho): " << nFrames / TempoTotal << endl;
         TempoTotal = 0;
         nFrames = 0;
     }
 }
 // **********************************************************************
-//  void reshape( int w, int h )
+//  void reshape(int w, int h)
 //  trata o redimensionamento da janela OpenGL
 // **********************************************************************
 void reshape(int w, int h) {
@@ -374,74 +376,47 @@ void reshape(int w, int h) {
     glLoadIdentity();
 }
 // **********************************************************************
-//  void DesenhaEixos()
-//      Desenha os eixos X e Y na tela
+//  void DesenhaEixos(Ponto meio, Ponto min, Ponto max)
+//      Desenha os eixos a partir dos pontos indicados na tela
 // **********************************************************************
-void DesenhaEixos() {
+void DesenhaEixos(Ponto meio, Ponto min, Ponto max) {
     glBegin(GL_LINES);
     //  eixo horizontal
-    glVertex2f(Minimo.x, Meio.y);
-    glVertex2f(Maximo.x, Meio.y);
+    glVertex2f(min.x, meio.y);
+    glVertex2f(max.x, meio.y);
     //  eixo vertical
-    glVertex2f(Meio.x, Minimo.y);
-    glVertex2f(Meio.x, Maximo.y);
+    glVertex2f(meio.x, min.y);
+    glVertex2f(meio.x, max.y);
     glEnd();
-}
-// **********************************************************************
-//  void DesenhaLinha(Ponto P1, Ponto P2)
-//      Desenha uma linha entre os pontos P1 e P2
-// **********************************************************************
-void DesenhaLinha(Ponto P1, Ponto P2) {
-    glBegin(GL_LINES);
-    glVertex3f(P1.x, P1.y, P1.z);
-    glVertex3f(P2.x, P2.y, P2.z);
-    glEnd();
-}
-// **********************************************************************
-//  void DesenhaQuadTree(nodo_quadtree *nodo)
-//   Desenha a quadtree sem cores
-// **********************************************************************
-void DesenhaQuadTree(nodo_quadtree *nodo) {
-    Poligono envelope = Poligono();
-    envelope.insereVertice(Ponto(nodo->Max.x, nodo->Min.y));
-    envelope.insereVertice(Ponto(nodo->Max.x, nodo->Max.y));
-    envelope.insereVertice(Ponto(nodo->Min.x, nodo->Max.y));
-    envelope.insereVertice(Ponto(nodo->Min.x, nodo->Min.y));
-
-    envelope.desenhaPoligono();
-
-    if (nodo->cheio) {
-        for (int i = 0; i < 4; i++) {
-            DesenhaQuadTree(nodo->filho[i]);
-        }
-    }
 }
 // **********************************************************************
 //  void PintaQuadTree(nodo_quadtree *nodo, int controle)
 //      Pinta os nodos da quadtree com cores diferentes para cada nivel
 // **********************************************************************
 void PintaQuadTree(nodo_quadtree *nodo, int controle) {
-    glLineWidth(1);
     switch (controle) {
         case 0:
-            glLineWidth(2);
-            glColor3f(0, 0, 1);  // Azul
-            controle = 1;
-            break;
+            glColor3f(0, 0, 0);  // preto
+            break;              // Nao muda de cor, usado para quadtree monocromatica
         case 1:
             glLineWidth(2);
-            glColor3f(1, 0, 1);  // Rosa
-            controle = 2;
+            glColor3f(0, 0, 1);  // Azul
+            controle = 2;        // Muda a cor para o proximo nivel da quadtree
             break;
         case 2:
             glLineWidth(2);
-            glColor3f(0.99, 0.87, 0.43);  // Laranja
-            controle = 3;
+            glColor3f(1, 0, 1);  // Rosa
+            controle = 3;        // Muda a cor para o proximo nivel da quadtree
             break;
         case 3:
             glLineWidth(2);
+            glColor3f(0.99, 0.87, 0.43);  // Laranja
+            controle = 4;                 // Muda a cor para o proximo nivel da quadtree
+            break;
+        case 4:
+            glLineWidth(2);
             glColor3f(0.53, 0.82, 0.97);  // Ciano
-            controle = 0;
+            controle = 1;                 // Muda a cor para o proximo nivel da quadtree
             break;
     }
 
@@ -449,17 +424,10 @@ void PintaQuadTree(nodo_quadtree *nodo, int controle) {
     float meioX = (nodo->Min.x + nodo->Max.x) / 2;
     float meioY = (nodo->Min.y + nodo->Max.y) / 2;
 
-    glBegin(GL_LINES);
-    //  eixo horizontal que separa os nodos filhos
-    glVertex2f(nodo->Min.x, meioY);
-    glVertex2f(nodo->Max.x, meioY);
-    //  eixo vertical que separa os nodos filhos
-    glVertex2f(meioX, nodo->Min.y);
-    glVertex2f(meioX, nodo->Max.y);
-    glEnd();
+    DesenhaEixos(Ponto(meioX, meioY), nodo->Min, nodo->Max);
 
     for (int i = 0; i < 4; i++) {
-        if (nodo->filho[i]->cheio)
+        if (!nodo->filho[i]->folha)
             PintaQuadTree(nodo->filho[i], controle);
     }
 }
@@ -517,11 +485,7 @@ void calculaEnvelope(Poligono pontos, Ponto min, Ponto max) {
 // **********************************************************************
 void calculaQuadTree(nodo_quadtree *nodo, Ponto minEnv, Ponto maxEnv) {
     if (colide(nodo->Min, nodo->Max, minEnv, maxEnv)) {
-        if (nodo->cheio) {
-            for (int i = 0; i < 4; i++) {
-                calculaQuadTree(nodo->filho[i], minEnv, maxEnv);
-            }
-        } else {
+        if (nodo->folha) {
             qtd_colisoes++;
             for (size_t i = 0; i < nodo->pontos.getNVertices(); i++) {
                 Ponto ponto = nodo->pontos.getVertice(i);
@@ -529,6 +493,10 @@ void calculaQuadTree(nodo_quadtree *nodo, Ponto minEnv, Ponto maxEnv) {
                     pontosFalsos++;
                     pintaPonto(ponto, DarkYellow);
                 }
+            }
+        } else {
+            for (int i = 0; i < 4; i++) {
+                calculaQuadTree(nodo->filho[i], minEnv, maxEnv);
             }
         }
     }
@@ -548,7 +516,7 @@ void display(void) {
     if (desenhaEixos) {
         glLineWidth(1);
         glColor3f(0, 0, 0);  // R, G, B  [0..1]
-        DesenhaEixos();
+        DesenhaEixos(Meio, Minimo, Maximo);
     }
 
     glPointSize(2);
@@ -576,10 +544,9 @@ void display(void) {
     }
 
     if (desenhaQuadTree) {
-        if (!pinta_QuadTree) {
-            glLineWidth(2);
-            glColor3f(0, 0, 0);
-            DesenhaQuadTree(tree);
+        glLineWidth(2);
+        if (pinta_QuadTree) {
+            PintaQuadTree(tree, 1);
         } else {
             PintaQuadTree(tree, 0);
         }
@@ -792,7 +759,7 @@ void Mouse(int button, int state, int x, int y) {
 int main(int argc, char **argv) {
     cout << "Programa OpenGL" << endl;
 
-    // executa algumas inicializações
+    // executa algumas inicializacoes
     init();
 
     glutInit(&argc, argv);
@@ -811,33 +778,33 @@ int main(int argc, char **argv) {
 
     // Define que o tratador de evento para
     // o redesenho da tela. A funcao "display"
-    // será chamada automaticamente quando
-    // for necessário redesenhar a janela
+    // sera chamada automaticamente quando
+    // for necessario redesenhar a janela
     glutDisplayFunc(display);
 
-    // Define que o tratador de evento para
-    // o invalida ‹o da tela. A funcao "display"
+    // Define o tratador de evento para
+    // a invalidacao da tela. A funcao "display"
     // será chamada automaticamente sempre que a
-    // m‡quina estiver ociosa (idle)
+    // maquina estiver ociosa (idle)
     glutIdleFunc(animate);
 
     // Define que o tratador de evento para
     // o redimensionamento da janela. A funcao "reshape"
-    // será chamada automaticamente quando
-    // o usuário alterar o tamanho da janela
+    // sera chamada automaticamente quando
+    // o usuario alterar o tamanho da janela
     glutReshapeFunc(reshape);
 
     // Define que o tratador de evento para
     // as teclas. A funcao "keyboard"
     // será chamada automaticamente sempre
-    // o usuário pressionar uma tecla comum
+    // o usuario pressionar uma tecla comum
     glutKeyboardFunc(keyboard);
 
     // Define que o tratador de evento para
     // as teclas especiais(F1, F2,... ALT-A,
     // ALT-B, Teclas de Seta, ...).
-    // A funcao "arrow_keys" será chamada
-    // automaticamente sempre o usuário
+    // A funcao "arrow_keys" sera chamada
+    // automaticamente sempre o usuario
     // pressionar uma tecla especial
     glutSpecialFunc(arrow_keys);
 
