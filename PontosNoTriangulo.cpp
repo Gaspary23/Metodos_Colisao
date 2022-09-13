@@ -50,7 +50,7 @@ float DimensaoDoCampoDeVisao = 0.25;
 Ponto Minimo, Maximo, Tamanho, Meio;
 Ponto PosicaoDoCampoDeVisao, vetoresTriangulo[3], PontoClicado;
 unsigned long int QTD_PONTOS;
-int qtd_colisoes;
+size_t qtd_colisoes, qtd_forcaBruta;
 
 bool desenhaEixos = true;
 bool FoiClicado = false;
@@ -485,6 +485,7 @@ void pintaPonto(Ponto ponto, int cor) {
 // **********************************************************************
 bool forcaBruta(Ponto ponto) {
     Ponto auxiliar = {0, 0, 0};
+    qtd_forcaBruta++;
     for (int j = 0; j < 3; j++) {
         Ponto vetorTriangulo = vetoresTriangulo[j];
         Ponto vetorPonto = ponto - CampoDeVisao.getVertice(j);
@@ -609,7 +610,8 @@ void printResults() {
     // Zera os contadores de pontos
     pontosInternos = 0;
     pontosFalsos = 0;
-    qtd_colisoes = 0;  
+    qtd_colisoes = 0;
+    qtd_forcaBruta = 0;
 
     auto start = chrono::high_resolution_clock::now();
 
@@ -639,6 +641,7 @@ void printResults() {
     cout << "Numero de pontos fora do triangulo e dos filtros: "
          << PontosDoCenario.getNVertices() - (pontosInternos + pontosFalsos)
          << endl;
+    cout << "Numero de vezes que o algoritmo de forca bruta foi executado: " << qtd_forcaBruta << endl;
     cout << "Tempo de execucao do algoritmo: " << duration.count() << " micros\n"
          << endl;
 }
