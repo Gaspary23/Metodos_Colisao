@@ -45,7 +45,7 @@ public:
     void imprime();
     void atualizaLimites();
     void obtemLimites(Ponto &Min, Ponto &Max);
-    void LePoligono(const char *nome);
+    void LePoligono(const char *nome, unsigned long int *qtd_pontos);
     void desenhaAresta(int n);
     void getAresta(int i, Ponto &P1, Ponto &P2);
     void alteraVertice(int i, Ponto P);

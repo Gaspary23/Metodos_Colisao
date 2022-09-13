@@ -82,7 +82,7 @@ void Poligono::obtemLimites(Ponto &Min, Ponto &Max)
 // **********************************************************************
 //
 // **********************************************************************
-void Poligono::LePoligono(const char *nome)
+void Poligono::LePoligono(const char *nome, unsigned long int *qtd_pontos)
 {
     ifstream input;            // ofstream arq;
     input.open(nome, ios::in); //arq.open(nome, ios::out);
@@ -97,7 +97,8 @@ void Poligono::LePoligono(const char *nome)
     unsigned int qtdVertices;
     
     input >> qtdVertices;  // arq << qtdVertices
-
+    *qtd_pontos = qtdVertices;
+    
     for (int i=0; i< qtdVertices; i++)
     {
         double x,y;

@@ -42,7 +42,7 @@ double AccumDeltaT = 0;
 
 // Variaveis que controlam o triangulo do campo de visao
 Poligono PontosDoCenario, CampoDeVisao, TrianguloBase, Envelope;
-size_t pontosInternos, pontosFalsos, maxPontosNodo = 20;
+size_t pontosInternos, pontosFalsos, qtd_colisoes, qtd_forcaBruta, idx_posicao = 1, maxPontosNodo = 10;
 float AnguloDoCampoDeVisao = 0.0;
 float DimensaoDoCampoDeVisao = 0.25;
 
@@ -50,7 +50,6 @@ float DimensaoDoCampoDeVisao = 0.25;
 Ponto Minimo, Maximo, Tamanho, Meio;
 Ponto PosicaoDoCampoDeVisao, vetoresTriangulo[3], PontoClicado;
 unsigned long int QTD_PONTOS;
-size_t qtd_colisoes, qtd_forcaBruta;
 bool desenhaEixos = true;
 bool FoiClicado = false;
 
@@ -145,10 +144,30 @@ void CriaEnvelope() {
 //  com a orientacao "AnguloDoCampoDeVisao".
 //  O tamanho padrao do campo de visao eh de 25% da largura da janela.
 // **********************************************************************
-void PosicionaTrianguloDoCampoDeVisao(float dimensao) {
+void PosicionaTrianguloDoCampoDeVisao(float dimensao, int n) {
     float tamanho = Tamanho.x * dimensao;
-
     Ponto temp;
+
+    switch (n) {
+        case 1:
+            AnguloDoCampoDeVisao = 0;
+            PosicaoDoCampoDeVisao = Meio;
+            break;
+        case 2:
+            AnguloDoCampoDeVisao = 90;
+            PosicaoDoCampoDeVisao = Meio;
+            break;
+        case 3:
+            AnguloDoCampoDeVisao = 90;
+            PosicaoDoCampoDeVisao = Meio * 0.5;
+            break;
+        case 4:
+            AnguloDoCampoDeVisao = 0;
+            PosicaoDoCampoDeVisao = Meio + Meio * 0.5;
+            break;
+        default:
+            break;
+    }
     for (int i = 0; i < TrianguloBase.getNVertices(); i++) {
         temp = TrianguloBase.getVertice(i);
         temp.rotacionaZ(AnguloDoCampoDeVisao);
@@ -256,7 +275,7 @@ void criaQuadTree(nodo_quadtree *nodo, Ponto min, Ponto max) {
     nodo->Min = min;
     nodo->Max = max;
     calculaPontosNoNodo(&(nodo->pontos), nodo->Min, nodo->Max);
-    nodo->folha = nodo->pontos.getNVertices() > maxPontosNodo ? false : true;
+    nodo->folha = nodo->pontos.getNVertices() >= maxPontosNodo ? false : true;
 
     if (!nodo->folha) {
         subdivide(nodo, min, max);
@@ -311,7 +330,7 @@ void init() {
         char *s = new char[strlen(dir) + strlen(caso) + 1];
         strcpy(s, dir);
         strcat(s, caso);
-        PontosDoCenario.LePoligono(s);
+        PontosDoCenario.LePoligono(s, &QTD_PONTOS);
     }
 
     PontosDoCenario.obtemLimites(Minimo, Maximo);
@@ -330,7 +349,7 @@ void init() {
     // Cria o triangulo que representa o campo de visao
     CriaTrianguloDoCampoDeVisao();
     CriaEnvelope();
-    PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao);
+    PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao, 0);
     PosicionaEnvelope(&Envelope);
     inicializaQuadTree();
 }
@@ -352,9 +371,10 @@ void animate() {
         glutPostRedisplay();
     }
     if (TempoTotal > 5.0) {
-        cout << "\nTempo Acumulado: " << TempoTotal << " segundos. " << endl;
+        /*cout << "\nTempo Acumulado: " << TempoTotal << " segundos. " << endl;
         cout << "Nros de Frames sem desenho: " << nFrames << endl;
-        cout << "FPS(sem desenho): " << nFrames / TempoTotal << endl;
+        cout << "FPS(sem desenho): " << nFrames / TempoTotal << "\n" << endl;
+        */
         TempoTotal = 0;
         nFrames = 0;
     }
@@ -397,7 +417,7 @@ void PintaQuadTree(nodo_quadtree *nodo, int controle) {
     switch (controle) {
         case 0:
             glColor3f(0, 0, 0);  // preto
-            break;              // Nao muda de cor, usado para quadtree monocromatica
+            break;               // Nao muda de cor, usado para quadtree monocromatica
         case 1:
             glLineWidth(2);
             glColor3f(0, 0, 1);  // Azul
@@ -450,7 +470,7 @@ void pintaPonto(Ponto ponto, int cor) {
 bool forcaBruta(Ponto ponto) {
     Ponto auxiliar = {0, 0, 0};
     qtd_forcaBruta++;
-    for (int j = 0; j < 3; j++) {
+    for (int j = 0; j < CampoDeVisao.getNVertices(); j++) {
         Ponto vetorTriangulo = vetoresTriangulo[j];
         Ponto vetorPonto = ponto - CampoDeVisao.getVertice(j);
 
@@ -485,8 +505,8 @@ void calculaEnvelope(Poligono pontos, Ponto min, Ponto max) {
 // **********************************************************************
 void calculaQuadTree(nodo_quadtree *nodo, Ponto minEnv, Ponto maxEnv) {
     if (colide(nodo->Min, nodo->Max, minEnv, maxEnv)) {
+        qtd_colisoes++;
         if (nodo->folha) {
-            qtd_colisoes++;
             for (size_t i = 0; i < nodo->pontos.getNVertices(); i++) {
                 Ponto ponto = nodo->pontos.getVertice(i);
                 if (!forcaBruta(ponto)) {
@@ -579,15 +599,15 @@ void printResults() {
     auto start = chrono::high_resolution_clock::now();
 
     if (bool_forcaBruta) {
-        cout << "\n\nAlgoritmo de Forca Bruta: " << endl;
+        cout << "\n\nAlgoritmo  Forca Bruta: " << endl;
         for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
             forcaBruta(PontosDoCenario.getVertice(i));
         }
     } else if (bool_Envelope) {
-        cout << "\n\nAlgoritmo de Envelope: " << endl;
+        cout << "\n\nAlgoritmo  Envelope: " << endl;
         calculaEnvelope(PontosDoCenario, Envelope.getVertice(0), Envelope.getVertice(2));
     } else if (bool_QuadTree) {
-        cout << "\n\nAlgoritmo de Quad Tree: " << endl;
+        cout << "\n\nAlgoritmo  Quad Tree: " << endl;
         calculaQuadTree(tree, Envelope.getVertice(0), Envelope.getVertice(2));
     }
 
@@ -607,6 +627,41 @@ void printResults() {
     cout << "Numero de vezes que o algoritmo de forca bruta foi executado: " << qtd_forcaBruta << endl;
     cout << "Tempo de execucao do algoritmo: " << duration.count() << " micros\n"
          << endl;
+}
+// **********************************************************************
+//  testeResults()
+//      Imprime os resultados dos casos de teste de acordo
+//          com o modelo de apresentacao
+// **********************************************************************
+void testeResults() {
+    cout << "\nPosicao " << idx_posicao << endl;
+    for (int i = 1; i <= 3; i++) {
+        // Zera os contadores de pontos
+        pontosInternos = 0;
+        pontosFalsos = 0;
+        qtd_colisoes = 0;
+        qtd_forcaBruta = 0;
+
+        switch (i) {
+            case 1:
+                for (int i = 0; i < PontosDoCenario.getNVertices(); i++) {
+                    forcaBruta(PontosDoCenario.getVertice(i));
+                }
+                cout << "Modo: Forca Bruta - Nro de Testes ForcaBruta: " << qtd_forcaBruta << endl;
+                break;
+            case 2:
+                calculaEnvelope(PontosDoCenario, Envelope.getVertice(0), Envelope.getVertice(2));
+                cout << "Modo: Envelope - Nro de Testes ForcaBruta: " << qtd_forcaBruta;
+                cout << " - Testes Envelope X Ponto: " << QTD_PONTOS << endl;
+                break;
+            case 3:
+                calculaQuadTree(tree, Envelope.getVertice(0), Envelope.getVertice(2));
+                cout << "Modo: QuadTree - Nro de Testes ForcaBruta: " << qtd_forcaBruta;
+                cout << " - Testes Envelope X Envelope: " << qtd_colisoes
+                     << endl;
+                break;
+        }
+    }
 }
 // **********************************************************************
 // ContaTempo(double tempo)
@@ -643,7 +698,6 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case 'd':  // Desenha a QuadTree na tela
             desenhaQuadTree = !desenhaQuadTree;
-            PosicionaEnvelope(&Envelope);
             break;
         case 'e':  // Ativa o algoritmo de envelope
             if (bool_forcaBruta || bool_QuadTree) {
@@ -670,15 +724,15 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case 'm':  // Aumenta o tamanho do campo de visao
             if (DimensaoDoCampoDeVisao < 0.75) {
-                PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao += 0.05);
-                if (bool_Envelope || bool_QuadTree || desenhaQuadTree)
+                PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao += 0.05, 0);
+                if (bool_Envelope || bool_QuadTree)
                     PosicionaEnvelope(&Envelope);
             }
             break;
         case 'n':  // Diminui o tamanho do campo de visao
             if (DimensaoDoCampoDeVisao > 0.1) {
-                PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao -= 0.05);
-                if (bool_Envelope || bool_QuadTree || desenhaQuadTree)
+                PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao -= 0.05, 0);
+                if (bool_Envelope || bool_QuadTree)
                     PosicionaEnvelope(&Envelope);
             }
             break;
@@ -691,11 +745,23 @@ void keyboard(unsigned char key, int x, int y) {
         case 't':  // Conta o numero de frames em um determinado tempo
             ContaTempo(3);
             break;
+        case 'x':  // Imprime os resultados dos casos de teste
+            testeResults();
+            break;
         case ' ':  // Altera a opcao de desenhar os eixos
             desenhaEixos = !desenhaEixos;
             break;
         case 27:      // Termina o programa qdo
             exit(0);  // a tecla ESC for pressionada
+            break;
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+            idx_posicao = key - '0';
+            PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao, idx_posicao);
+            if (bool_Envelope || bool_QuadTree)
+                PosicionaEnvelope(&Envelope);
             break;
         default:
             break;
@@ -722,8 +788,8 @@ void arrow_keys(int a_keys, int x, int y) {
         default:
             break;
     }
-    PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao);  // Atualiza posicao do campo de visao
-    PosicionaEnvelope(&Envelope);                              // Atualiza posicao do envelope
+    PosicionaTrianguloDoCampoDeVisao(DimensaoDoCampoDeVisao, 0);  // Atualiza posicao do campo de visao
+    PosicionaEnvelope(&Envelope);                                 // Atualiza posicao do envelope
     glutPostRedisplay();
 }
 // **********************************************************************
