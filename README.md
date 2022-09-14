@@ -1,6 +1,6 @@
 # Trabalho sobre Métodos de Colisão
 
-Trabalho 1 da disciplina de Computação Gráfica desenvolvido por Marcio Pinho e alterado por Pedro Gaspary e Lucas Cunha.
+Trabalho 1 da disciplina de Computação Gráfica desenvolvido por Marcio Pinho e alterado por Pedro Gaspary e Lucas Cunha. O código foi desenvolvido em C++ e utiliza a biblioteca OpenGL.
 
 ## Como compilar
 
@@ -16,7 +16,7 @@ Para executar o programa, basta executar, na pasta raíz do projeto, o comando:
 
     $ ./Triangulo
 
-O programa será executado automaticamente. No início da execução, o usuário será perguntado se deseja gerar pontos aleatórios no cenário ou ler um caso de teste. Essa seleção deve ser feita no terminal, digitando os valores indicados nas mensagens do programa. 
+O programa será executado automaticamente. No início da execução, o usuário será perguntado se deseja gerar pontos aleatórios no cenário ou ler um caso de teste. Essa seleção deve ser feita no terminal, digitando os valores indicados nas mensagens do programa.
 
 > No caso da geração de pontos, é indicado valores entre 1000 e 10000 para melhor aproveitamento do programa.
 
@@ -75,6 +75,20 @@ Importante notar que não é possível desligar um algoritmo, apenas alterar o a
 `p` - Liga/desliga a pintura dos níveis da quadtree
 
 > Os níveis são pintados nos seus eixos, com cores que se repetem a cada quatro níveis
+
+### Apresentação
+
+`1` - Posiciona o campo de visão no centro da tela, virado para direita
+
+`2` - Posiciona o campo de visão no centro da tela, virado para cima
+
+`3` - Posiciona o campo de visão abaixo do centro, à esquerda da tela, virado para baixo
+
+`4` - Posiciona o campo de visão acima do centro, à direita da tela, virado para esquerda
+
+`x` - Imprime o resultado de acordo com o caso de teste
+
+> Os casos de teste para apresentação podem ser carregados com os arquivos na pasta `tests` (CenarioDeTeste.txt e CenarioGrande.txt). O arquivo CenarioDeTeste.txt contém 80 pontos e o arquivo CenarioGrande.txt contém 10000 pontos. Para cada caso, deve-se imprimir o resultado com o comando `x` para cada uma das quatro posições.
 
 ### Resultados
 
