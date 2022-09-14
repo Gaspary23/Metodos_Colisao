@@ -371,10 +371,10 @@ void animate() {
         glutPostRedisplay();
     }
     if (TempoTotal > 5.0) {
-        /*cout << "\nTempo Acumulado: " << TempoTotal << " segundos. " << endl;
+        cout << "\nTempo Acumulado: " << TempoTotal << " segundos. " << endl;
         cout << "Nros de Frames sem desenho: " << nFrames << endl;
         cout << "FPS(sem desenho): " << nFrames / TempoTotal << "\n" << endl;
-        */
+        
         TempoTotal = 0;
         nFrames = 0;
     }
@@ -391,7 +391,6 @@ void reshape(int w, int h) {
     glViewport(0, 0, w, h);
     // Define os limites logicos da area OpenGL dentro da Janela
     glOrtho(Minimo.x, Maximo.x, Minimo.y, Maximo.y, 0, 1);
-
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -637,8 +636,6 @@ void testeResults() {
     cout << "\nPosicao " << idx_posicao << endl;
     for (int i = 1; i <= 3; i++) {
         // Zera os contadores de pontos
-        pontosInternos = 0;
-        pontosFalsos = 0;
         qtd_colisoes = 0;
         qtd_forcaBruta = 0;
 
@@ -670,8 +667,8 @@ void testeResults() {
 // **********************************************************************
 void ContaTempo(double tempo) {
     Temporizador T;
-
     unsigned long cont = 0;
+
     cout << "Inicio contagem de " << tempo << "segundos ..." << flush;
     while (true) {
         tempo -= T.getDeltaT();
@@ -687,7 +684,6 @@ void ContaTempo(double tempo) {
 //      Funcao responsavel pelos eventos do teclado
 // **********************************************************************
 void keyboard(unsigned char key, int x, int y) {
-    size_t aux;
     switch (key) {
         case 'a':  // Altera o numero maximo de pontos
                    // nos nodos da quadtree
