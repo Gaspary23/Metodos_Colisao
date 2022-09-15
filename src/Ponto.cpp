@@ -6,7 +6,7 @@
 //  Copyright © 2020 Márcio Sarroglia Pinho. All rights reserved.
 //
 
-#include "Ponto.h"
+#include "../include/Ponto.h"
 Ponto::Ponto ()
 {
     x=y=z=0;

@@ -9,7 +9,7 @@
 #include <fstream>
 using namespace std;
 
-#include "Poligono.h"
+#include "../include/Poligono.h"
 
 Poligono::Poligono()
 {

@@ -1,4 +1,4 @@
-#include "ListaDeCoresRGB.h"
+#include "../include/ListaDeCoresRGB.h"
 
 //https://community.khronos.org/t/color-tables/22518/5
 

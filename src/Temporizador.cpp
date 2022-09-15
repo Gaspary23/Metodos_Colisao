@@ -6,7 +6,7 @@
 //  Copyright © 2020 rmd. All rights reserved.
 //
 
-#include "Temporizador.h"
+#include "../include/Temporizador.h"
 
 // Inicializa o temporizador
 Temporizador::Temporizador()

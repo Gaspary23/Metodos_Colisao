@@ -1,22 +1,29 @@
-# Makefile para Linux e macOS
-
 PROG = Triangulo
-FONTES = Ponto.cpp Poligono.cpp Temporizador.cpp ListaDeCoresRGB.cpp PontosNoTriangulo.cpp
+CC = g++
+CPPFLAGS = -O3 -lGL -lGLU -lglut -lm -lstdc++
 
-OBJETOS = $(FONTES:.cpp=.o)
-CPPFLAGS = -g -O3 -DGL_SILENCE_DEPRECATION # -Wall -g  # Todas as warnings, infos de debug
+OBJ_DIR = obj
+SRC_DIR = src
 
-UNAME = `uname`
+FONTES = Ponto.cpp Poligono.cpp Temporizador.cpp ListaDeCoresRGB.cpp
+OBJ = $(addprefix $(OBJ_DIR)/, $(FONTES:.cpp=.o))
 
-all: $(TARGET)
-	-@make $(UNAME)
+all: check_obj_dir obj_loop main_obj prog 
 
-Darwin: $(OBJETOS)
-#	g++ $(OBJETOS) -O3 -Wno-deprecated -framework OpenGL -framework Cocoa -framework GLUT -lm -o $(PROG)
-	g++ $(OBJETOS) -O3 -framework OpenGL -framework Cocoa -framework GLUT -lm -o $(PROG)
+check_obj_dir: 
+    ifeq ("$(wildcard $(OBJ_DIR))", "")
+		@mkdir obj/
+    endif
 
-Linux: $(OBJETOS)
-	gcc $(OBJETOS) -O3 -lGL -lGLU -lglut -lm -lstdc++ -o $(PROG)
+obj_loop: $(OBJ)	
+$(OBJ_DIR)/%.o : $(SRC_DIR)/%.cpp
+	$(CC) -c -o $@ $<
+
+main_obj: 
+	$(CC) -c -o $(OBJ_DIR)/PontosNoTriangulo.o PontosNoTriangulo.cpp
+
+prog:
+	$(CC) $(OBJ) $(OBJ_DIR)/PontosNoTriangulo.o $(CPPFLAGS) -o $(PROG)
 
 clean:
-	-@ rm -f $(OBJETOS) $(PROG)
+	-@ rm -f $(OBJ) $(OBJ_DIR)/PontosNoTriangulo.o $(PROG)

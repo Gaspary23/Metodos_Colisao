@@ -29,7 +29,6 @@ Para limpar o projeto, basta executar, na pasta raíz do projeto, o comando:
 O programa será limpo automaticamente.
 
 ## Comandos do Programa
-
 ### Movimento do Campo de Visão
 
 O campo de visão pode ser movimentado, rotacionado e ter sua dimensão alterada usando os seguintes comandos:
